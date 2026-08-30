@@ -462,24 +462,39 @@ els.sourceForm.addEventListener("submit", async event => {
 document.querySelector("#gridView").addEventListener("click", () => setView("grid"));
 document.querySelector("#listView").addEventListener("click", () => setView("list"));
 document.querySelector("#carouselView").addEventListener("click", () => setView("carousel"));
+document.querySelector("#carouselHView").addEventListener("click", () => setView("carouselH"));
 document.querySelector("#carouselClose").addEventListener("click", () => setView("grid"));
 function setView(view) {
   els.grid.classList.toggle("list-mode", view === "list");
   document.querySelector("#gridView").classList.toggle("active", view === "grid");
   document.querySelector("#listView").classList.toggle("active", view === "list");
   document.querySelector("#carouselView").classList.toggle("active", view === "carousel");
-  if (view === "carousel") enterCarousel(); else exitCarousel();
+  document.querySelector("#carouselHView").classList.toggle("active", view === "carouselH");
+  if (view === "carousel") enterCarousel("vertical");
+  else if (view === "carouselH") enterCarousel("horizontal");
+  else exitCarousel();
 }
 
 // --- 轉盤模式：朋友臉孔繞著大輪盤（移植自 Viscose-carousel，去掉卡片間的黏稠連結）---
+// 直向：輪盤在左、臉孔上下捲動；橫向：輪盤在下、臉孔左右捲動，一次至少看到 3 張完整頭像。
 let carouselInstance = null;
 const carouselMode = document.querySelector("#carouselMode");
-function enterCarousel() {
-  if (carouselInstance) return;
+const CAROUSEL_COPY = {
+  vertical: { eyebrow: "CAROUSEL · 朋友轉盤", hint: "滾動或拖曳轉動　·　點卡片轉到正面，再點一次開啟朋友" },
+  horizontal: { eyebrow: "CAROUSEL · 橫向轉盤", hint: "左右滾動或拖曳轉動　·　點卡片轉到正面，再點一次開啟朋友" }
+};
+function enterCarousel(orientation) {
+  if (carouselInstance) {
+    if (carouselInstance.orientation === orientation) return;
+    exitCarousel(); // switching orientation → rebuild
+  }
   const items = visibleFriends()
     .filter(friend => state.faceOf[friend.id])
     .map(friend => ({ src: state.faceOf[friend.id], id: friend.id, name: friend.name, rel: relationName(friend.relation) }));
   if (!items.length) { showToast("目前沒有可顯示的頭像"); setView("grid"); return; }
+  const copy = CAROUSEL_COPY[orientation] || CAROUSEL_COPY.vertical;
+  carouselMode.querySelector(".carousel-topbar .eyebrow").textContent = copy.eyebrow;
+  carouselMode.querySelector(".carousel-hint").textContent = copy.hint;
   carouselMode.classList.add("active");
   carouselMode.setAttribute("aria-hidden", "false");
   document.body.classList.add("carousel-open");
@@ -487,6 +502,7 @@ function enterCarousel() {
     carouselInstance = new RingCarousel({
       mount: carouselMode,
       items,
+      orientation,
       onOpen: id => { setView("grid"); openDrawer(id); }
     });
   } catch (err) {
@@ -494,6 +510,7 @@ function enterCarousel() {
     showToast("轉盤模式無法啟動");
     exitCarousel();
     document.querySelector("#carouselView").classList.remove("active");
+    document.querySelector("#carouselHView").classList.remove("active");
     document.querySelector("#gridView").classList.add("active");
   }
 }

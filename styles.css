@@ -370,9 +370,10 @@ body.carousel-open { overflow: hidden; }
   position: absolute; transform: translateY(-50%);
   opacity: 0; pointer-events: none;
 }
+.carousel-meta--center { transform: translateX(-50%); text-align: center; } /* horizontal: centred under the front card */
 .carousel-meta.show { opacity: 1; }
-.carousel-meta.swap { animation: carouselMetaSwap .5s ease; }
-@keyframes carouselMetaSwap { from { opacity: 0; transform: translateY(-50%) translateY(6px); } to { opacity: 1; transform: translateY(-50%); } }
+.carousel-meta.swap { animation: carouselMetaFade .5s ease; }
+@keyframes carouselMetaFade { from { opacity: 0; } to { opacity: 1; } }
 .carousel-meta__idx { font-size: 13px; letter-spacing: .12em; color: var(--muted); }
 .carousel-meta__name { margin: 4px 0 6px; font-size: clamp(26px, 3vw, 44px); letter-spacing: -.04em; line-height: 1.02; }
 .carousel-meta__rel { font-size: 13px; color: var(--muted); }

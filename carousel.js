@@ -24,10 +24,13 @@
   const easeInOutCubic = t => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 
   class RingCarousel {
-    constructor({ mount, items, onOpen }) {
+    constructor({ mount, items, onOpen, orientation }) {
       this.mount = mount;
       this.items = items;
       this.onOpen = onOpen || function () {};
+      // "vertical" = wheel off to the left, cards sweep up/down (the original).
+      // "horizontal" = wheel below screen, cards sweep left↔right across a wide arc.
+      this.orientation = orientation === "horizontal" ? "horizontal" : "vertical";
 
       this.rotation = 0;      // radians; a card i faces front when rotation ≡ -i*step
       this.velocity = 0;      // rad/s
@@ -44,7 +47,7 @@
       this.dragSpeed = 1;
       this.snapFrom = 1.1;       // rad/s under which the ring commits to a slot
       this.snapLerp = 0.16;
-      this.radialFactor = 0.55;  // how much cards tilt with the wheel (0 = upright)
+      this.radialFactor = this.orientation === "horizontal" ? 0.4 : 0.55;  // card tilt with the wheel (0 = upright)
       this.pickDur = 0.6;        // click-to-centre seconds
 
       this._onResize = this.onResize.bind(this);
@@ -92,13 +95,28 @@
       const W = this.mount.clientWidth || window.innerWidth;
       const H = this.mount.clientHeight || window.innerHeight;
       this.W = W; this.H = H;
-      // A big wheel, mostly off-screen to the left, so only a gentle vertical arc shows.
-      this.cardH = clamp(H * 0.46, 200, 460);
-      this.cardW = this.cardH * 0.82;
-      this.R = Math.max(H * 1.5, 560);
-      this.frontX = W < 720 ? W * 0.5 : W * 0.4; // narrow screens centre the arc
-      this.cx = this.frontX - this.R;
-      this.cy = H * 0.5;
+      if (this.orientation === "horizontal") {
+        // Big wheel below the screen: cards ride a wide, gentle top arc and
+        // sweep left↔right. Radius is derived from width so the two side cards
+        // sit at ~0.30·W from centre — comfortably complete (front + 2 full,
+        // with the next pair peeking at the edges), holding through a turn.
+        this.cardW = clamp(W * 0.185, 190, 300);
+        this.cardH = this.cardW * 1.18;
+        this.R = Math.max((W * 0.30) / Math.sin(this.step), 720);
+        this.frontX = W * 0.5;
+        this.frontY = H * 0.46;
+        this.cx = this.frontX;        // centre directly below the front card
+        this.cy = this.frontY + this.R;
+      } else {
+        // Big wheel off to the left: cards ride a tall arc and sweep up/down.
+        this.cardH = clamp(H * 0.46, 200, 460);
+        this.cardW = this.cardH * 0.82;
+        this.R = Math.max(H * 1.5, 560);
+        this.frontX = W * 0.4;
+        this.frontY = H * 0.5;
+        this.cx = this.frontX - this.R;
+        this.cy = H * 0.5;
+      }
     }
 
     onResize() {
@@ -107,20 +125,30 @@
         c.el.style.width = this.cardW + "px";
         c.el.style.height = this.cardH + "px";
       });
-      // meta sits just right of the front card (like Viscose's side type)
-      this.metaEl.style.left = (this.frontX + this.cardW * 0.5 + Math.min(48, this.W * 0.03)) + "px";
-      this.metaEl.style.top = this.cy + "px";
-      this.metaEl.style.maxWidth = Math.max(120, this.W - (this.frontX + this.cardW * 0.5) - 60) + "px";
+      if (this.orientation === "horizontal") {
+        // meta centred just below the front card
+        this.metaEl.classList.add("carousel-meta--center");
+        this.metaEl.style.left = this.frontX + "px";
+        this.metaEl.style.top = (this.frontY + this.cardH * 0.5 + 26) + "px";
+        this.metaEl.style.maxWidth = Math.min(this.W * 0.6, 520) + "px";
+      } else {
+        // meta sits just right of the front card (like Viscose's side type)
+        this.metaEl.classList.remove("carousel-meta--center");
+        this.metaEl.style.left = (this.frontX + this.cardW * 0.5 + Math.min(48, this.W * 0.03)) + "px";
+        this.metaEl.style.top = this.cy + "px";
+        this.metaEl.style.maxWidth = Math.max(120, this.W - (this.frontX + this.cardW * 0.5) - 60) + "px";
+      }
       this.layout();
     }
 
     layout() {
-      const spread = this.step * 3.2; // angular reach over which cards fade/shrink out
+      const horizontal = this.orientation === "horizontal";
+      const spread = this.step * (horizontal ? 4 : 3.2); // angular reach over which cards fade/shrink out
       for (const c of this.cards) {
         const theta = this.rotation + c.i * this.step;
         const a = Math.abs(shortAngle(theta));
-        const x = this.cx + this.R * Math.cos(theta);
-        const y = this.cy + this.R * Math.sin(theta);
+        const x = horizontal ? this.cx + this.R * Math.sin(theta) : this.cx + this.R * Math.cos(theta);
+        const y = horizontal ? this.cy - this.R * Math.cos(theta) : this.cy + this.R * Math.sin(theta);
         const t = clamp(a / spread, 0, 1);
         const scale = lerp(1, 0.6, t);
         const opacity = a > spread ? 0 : lerp(1, 0.12, t);
@@ -172,9 +200,16 @@
     }
 
     /* -------- input -------- */
+    // the pointer axis that turns the ring: x for horizontal, y for vertical
+    pointerCoord(e) {
+      return this.orientation === "horizontal" ? e.clientX : e.clientY;
+    }
+
     onWheel(e) {
       this.tween = null;
-      this.velocity = clamp(this.velocity + e.deltaY * this.scrollSpeed, -this.maxSpeed, this.maxSpeed);
+      // horizontal wheels/trackpads report deltaX; fall back to deltaY for mice
+      const delta = this.orientation === "horizontal" ? (e.deltaX || e.deltaY) : e.deltaY;
+      this.velocity = clamp(this.velocity + delta * this.scrollSpeed, -this.maxSpeed, this.maxSpeed);
     }
 
     onPointerDown(e) {
@@ -182,7 +217,7 @@
       this.moved = 0;
       this.tween = null;
       this.velocity = 0;
-      this.lastY = e.clientY;
+      this.lastPos = this.pointerCoord(e);
       this.lastMoveT = performance.now();
       this.pointerVel = 0;
       this.downCard = e.target.closest && e.target.closest(".carousel-card");
@@ -194,13 +229,14 @@
     onPointerMove(e) {
       if (!this.dragging) return;
       const now = performance.now();
-      const dy = e.clientY - this.lastY;
-      this.moved += Math.abs(dy);
-      const dTheta = (dy / this.R) * this.dragSpeed; // arc length → angle
+      const pos = this.pointerCoord(e);
+      const d = pos - this.lastPos;
+      this.moved += Math.abs(d);
+      const dTheta = (d / this.R) * this.dragSpeed; // arc length → angle
       this.rotation += dTheta;
       const dt = Math.max(1, now - this.lastMoveT) / 1000;
       this.pointerVel = dTheta / dt;
-      this.lastY = e.clientY;
+      this.lastPos = pos;
       this.lastMoveT = now;
     }
 
