@@ -57,7 +57,6 @@ let activeView = "tube";
 const els = {
   grid: document.querySelector("#friendsGrid"),
   empty: document.querySelector("#emptyState"),
-  resultCount: document.querySelector("#resultCount"),
   drawer: document.querySelector("#friendDrawer"),
   drawerContent: document.querySelector("#drawerContent"),
   drawerBackdrop: document.querySelector("#drawerBackdrop"),
@@ -128,7 +127,6 @@ function boardFriends() {
 
 function render() {
   const friends = boardFriends();
-  els.resultCount.textContent = friends.length;
   els.empty.hidden = friends.length !== 0;
   els.grid.hidden = friends.length === 0;
   els.grid.innerHTML = friends.map(friendCard).join("");

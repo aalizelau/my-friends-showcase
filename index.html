@@ -34,7 +34,7 @@
           <div class="workspace">
             <div class="friends-area">
               <div class="result-bar">
-                <p><strong id="resultCount">0</strong> 位朋友</p>
+                <p>點選朋友，看看近況</p>
                 <div class="collection-controls">
                 <div class="tube-controls" id="tubeControls" role="group" aria-label="環繞相簿控制">
                   <button type="button" id="tubePrevious" aria-label="向左轉動相簿">←</button>
@@ -53,6 +53,8 @@
               </div>
               <div class="tube-gallery" id="tubeGallery" hidden>
                 <div class="tube-stage" id="tubeStage" role="region" aria-label="朋友環繞相簿" aria-describedby="tubeHelp">
+                  <div class="tube-orbit tube-orbit-top" aria-hidden="true"></div>
+                  <div class="tube-orbit tube-orbit-bottom" aria-hidden="true"></div>
                   <div class="tube-world" id="tubeWorld"></div>
                 </div>
                 <p class="sr-only" id="tubeHelp">左右拖曳或使用方向按鈕轉動。以 Tab 選取朋友，Enter 開啟手帳。可暫停自動旋轉。</p>

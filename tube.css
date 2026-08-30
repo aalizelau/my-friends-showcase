@@ -14,6 +14,9 @@
 }
 .tube-stage.is-dragging, .tube-stage.is-dragging * { cursor: grabbing !important; }
 .tube-stage::after { content: ""; position: absolute; inset: 0; z-index: 5; pointer-events: none; background: linear-gradient(90deg, var(--paper), transparent 5%, transparent 95%, var(--paper)); }
+.tube-orbit { pointer-events: none; position: absolute; left: 10%; width: 80%; height: 190px; border: 1px solid rgba(101,116,80,.11); border-radius: 50%; transform: rotate(-5deg); }
+.tube-orbit-top { top: 16%; }
+.tube-orbit-bottom { bottom: 12%; transform: rotate(5deg); }
 .tube-world { position: absolute; top: 50%; left: 50%; transform-style: preserve-3d; }
 .tube-portrait {
   position: absolute;
@@ -50,6 +53,7 @@
 @media (max-width: 760px) {
   .tube-gallery { margin: 0 -16px; }
   .tube-stage { height: clamp(440px, calc(100svh - 165px), 600px); }
+  .tube-orbit { left: -20%; width: 140%; height: 150px; }
   .result-bar { flex-wrap: wrap; }
   .collection-controls { gap: 6px; margin-left: auto; }
   .collection-views button { padding: 0 9px; font-size: 11px; }

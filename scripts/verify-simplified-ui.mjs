@@ -19,6 +19,13 @@ test("the collection has no search, category UI, dark theme, footer or marketing
   }
 });
 
+test("the toolbar shows the friend prompt and Tube retains two non-interactive ring lines", () => {
+  assert.match(html, /<p>點選朋友，看看近況<\/p>/);
+  assert.doesNotMatch(html + app, /resultCount/);
+  assert.equal((html.match(/class="tube-orbit tube-orbit-(?:top|bottom)" aria-hidden="true"/g) || []).length, 2);
+  assert.match(tubeCss, /\.tube-orbit \{ pointer-events: none;/);
+});
+
 // Exercise application startup and form submission without a browser or live data writes.
 async function startApplication(friends) {
   class Element {
@@ -110,7 +117,7 @@ test("startup displays every selected category without relying on removed contro
   const friends = ["close", "work", "community"].map((relation, index) => ({ id: String(index + 1), name: `Friend ${index}`, relation, interactions: [] }));
   const original = JSON.stringify(friends);
   const { nodes, profileMarkup } = await startApplication(friends);
-  assert.equal(nodes.get("#resultCount").textContent, 3);
+  assert.equal(nodes.get("#tubeWorld").children.length, 3);
   assert.equal(nodes.get("#emptyState").hidden, true);
   assert.equal((nodes.get("#friendsGrid").innerHTML.match(/data-friend-id=/g) || []).length, 3);
   for (const friend of friends) {
@@ -162,7 +169,7 @@ test("a friend can be added to an empty collection without choosing a category",
   assert.equal(nodes.get("#emptyState").hidden, false);
   await nodes.get("#friendForm").events.get("submit")({ preventDefault() {} });
   assert.deepEqual(writes, [{ name: "New friend", nickname: "", relation: "community", birthday: "" }]);
-  assert.equal(nodes.get("#resultCount").textContent, 1);
+  assert.equal(nodes.get("#tubeWorld").children.length, 1);
   assert.equal(nodes.get("#emptyState").hidden, true);
   assert.equal(nodes.get("#friendDialog").closed, true);
 });
