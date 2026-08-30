@@ -91,7 +91,10 @@ function fixture({ reducedMotion = false, lines = {} } = {}) {
   preference.matches = reducedMotion;
   globalThis.window = { matchMedia: () => preference, innerHeight: 900, scrollY: 0, scrollTo() {} };
   globalThis.document = new EventTarget();
-  globalThis.ResizeObserver = class { observe() {} };
+  globalThis.ResizeObserver = class {
+    constructor(callback) { this.notify = callback; }
+    observe() {}
+  };
   globalThis.requestAnimationFrame = () => 1;
   const board = new Element();
   const grid = new Element();
@@ -271,7 +274,7 @@ test("bubble appears on focus, survives resize, and clears before a blank profil
 
 test("focus reserves separate space for bubble, avatar and controls on narrow and short viewports", () => {
   for (const width of [288, 343, 720, 1150]) {
-    for (const bubbleHeight of [100, 126, 160]) {
+    for (const bubbleHeight of [100, 126, 160, 220, 280]) {
       const metrics = boardMetrics(width, 18);
       const geometry = focusGeometry(metrics, 0, 320, bubbleHeight);
       const avatarTop = geometry.position.y + metrics.itemHeight / 2 - metrics.itemHeight * geometry.position.scale / 2;
@@ -280,4 +283,19 @@ test("focus reserves separate space for bubble, avatar and controls on narrow an
       assert.ok(geometry.controlsTop + 80 <= metrics.height);
     }
   }
+});
+
+test("focus repositions after handwriting fonts change the bubble height", () => {
+  const { controller, bubble, settle } = fixture({ lines: { "1": { text: "Handwritten bubble" } } });
+  controller.focus("1");
+  const initialTop = bubble.style.top;
+  bubble.offsetHeight = 240;
+  controller.bubbleResizeObserver.notify();
+  settle();
+  const geometry = focusGeometry(controller.metrics, 0, 570, 240);
+  assert.notEqual(bubble.style.top, initialTop);
+  assert.equal(parseFloat(bubble.style.top), geometry.bubbleTop);
+  assert.equal(controller.entries.get("1").current.scale, geometry.position.scale);
+  controller.closeFocus();
+  assert.doesNotThrow(() => controller.bubbleResizeObserver.notify());
 });

@@ -1,3 +1,19 @@
+/* Bundled locally: no profile text or font requests leave the notebook. */
+@font-face {
+  font-family: "Gloria Hallelujah";
+  src: url("assets/fonts/gloria-hallelujah/GloriaHallelujah.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: "LXGW WenKai TC";
+  src: url("assets/fonts/lxgw-wenkai-tc/LXGWWenKaiTC-Regular.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
 :root {
   --paper: #f8f7f3;
   --paper-2: #fffefa;
@@ -12,6 +28,7 @@
   --cobalt: #2e63e8;
   --shadow: 0 18px 60px rgba(34, 45, 39, 0.09);
   --font: ui-rounded, "SF Pro Rounded", "PingFang TC", "Noto Sans TC", system-ui, sans-serif;
+  --font-handwritten: "Gloria Hallelujah", "LXGW WenKai TC", "PingFang TC", cursive;
 }
 
 * { box-sizing: border-box; }
@@ -379,7 +396,8 @@ button:focus-visible, a:focus-visible, .friend-card:focus-visible { outline: 2px
 .friend-card { width: 132px; min-height: 0; height: 176px; padding: 0; border: 0; border-radius: 0; overflow: visible; background: transparent; justify-self: center; justify-content: flex-start; user-select: none; -webkit-user-select: none; }
 .friend-card:hover { background: transparent; border: 0; }
 .friend-card .avatar { width: 132px; height: 132px; margin: 0 0 10px; filter: drop-shadow(0 3px 1px rgba(30,41,36,.1)); }
-.friend-card h3 { max-width: 100%; font-size: 14px; font-weight: 500; letter-spacing: -.025em; line-height: 1.4; padding: 3px 8px; background: var(--paper-2); border-radius: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.friend-card h3 { max-width: 100%; font-family: var(--font-handwritten); font-size: 16px; font-weight: 400; font-synthesis: none; letter-spacing: 0; line-height: 1.65; padding: 3px 8px; background: var(--paper-2); border-radius: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.detail-identity h2 { font-family: var(--font-handwritten); font-weight: 400; font-synthesis: none; letter-spacing: 0; line-height: 1.6; }
 .friend-card img, .friend-card svg { pointer-events: none; -webkit-user-drag: none; }
 .friends-grid.board-ready { position: absolute; inset: 0; display: block; padding: 0; }
 .board-ready .friend-card { position: absolute; top: 0; left: 0; width: var(--stamp-size); height: var(--stamp-height); touch-action: none; cursor: grab; will-change: transform; transition: filter 200ms ease, opacity 200ms ease; }
@@ -398,10 +416,10 @@ button:focus-visible, a:focus-visible, .friend-card:focus-visible { outline: 2px
 .focus-profile { display: flex; align-items: center; justify-content: center; gap: 20px; min-height: 42px; padding: 0 18px; border: 1px solid var(--ink); border-radius: 5px; color: var(--paper-2); background: var(--ink); font-size: 12px; white-space: nowrap; cursor: pointer; }
 .focus-close { display: block; margin: 12px auto 0; border: 0; padding: 8px; background: var(--paper-2); border-radius: 3px; color: var(--muted); font-size: 11px; cursor: pointer; }
 .focus-close kbd { border: 1px solid var(--line); border-radius: 3px; padding: 2px 4px; margin-left: 8px; font-size: 9px; }
-.focus-bubble { position: absolute; z-index: 100002; left: 50%; width: min(330px, calc(100% - 36px)); padding: 18px 22px 14px; transform: translateX(-50%); border: 1px solid var(--line); border-radius: 20px 20px 20px 6px; background: var(--paper-2); box-shadow: 0 7px 24px rgba(30,41,36,.07); cursor: default; }
+.focus-bubble { position: absolute; z-index: 100002; left: 50%; width: min(360px, calc(100% - 36px)); padding: 18px 22px 14px; transform: translateX(-50%); border: 1px solid var(--line); border-radius: 20px 20px 20px 6px; background: var(--paper-2); box-shadow: 0 7px 24px rgba(30,41,36,.07); cursor: default; }
 .focus-bubble::after { content: ""; position: absolute; left: calc(50% - 7px); bottom: -8px; width: 14px; height: 14px; transform: rotate(45deg); border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); background: var(--paper-2); }
 .focus-bubble:not([hidden]) { animation: focus-bubble-in 240ms 100ms ease-out both; }
-.focus-bubble-text { margin: 0; color: var(--ink); font-size: 14px; line-height: 1.8; overflow-wrap: anywhere; }
+.focus-bubble-text { margin: 0; color: var(--ink); font-family: var(--font-handwritten); font-size: 17px; font-weight: 400; font-synthesis: none; line-height: 1.8; overflow-wrap: anywhere; }
 .focus-bubble-caption { display: block; margin-top: 10px; color: var(--muted); font-size: 9px; letter-spacing: .025em; }
 @keyframes focus-bubble-in { from { opacity: 0; transform: translate(-50%, 7px); } to { opacity: 1; transform: translate(-50%, 0); } }
 .about-section { min-height: 200px; background: transparent; padding: 44px 24px; }

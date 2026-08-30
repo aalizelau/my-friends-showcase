@@ -54,8 +54,9 @@ export function shuffledPositions(count, metrics, random = Math.random) {
 }
 
 export function focusGeometry(metrics, visibleTop = 0, visibleBottom = metrics.height, bubbleHeight = 0) {
-  const scale = Math.min(1.5, (metrics.width - 40) / metrics.itemWidth);
   const bubbleSpace = bubbleHeight ? bubbleHeight + 20 : 0;
+  const scale = Math.min(1.5, (metrics.width - 40) / metrics.itemWidth,
+    Math.max(.5, (metrics.height - bubbleSpace - 108) / metrics.itemHeight));
   const centerX = metrics.width / 2;
   const centerY = clamp((visibleTop + visibleBottom - 96 + bubbleSpace) / 2,
     metrics.itemHeight * scale / 2 + 12 + bubbleSpace, metrics.height - metrics.itemHeight * scale / 2 - 96);
@@ -111,6 +112,15 @@ export class StampBoard {
       if (width > 0 && this.metrics && Math.abs(width - this.metrics.width) > 1) this.resize();
     });
     this.resizeObserver.observe(board);
+    // A downloaded handwriting font can change line wrapping after focus opens.
+    if (bubble) {
+      this.bubbleResizeObserver = new ResizeObserver(() => {
+        if (!this.focusedId || bubble.hidden) return;
+        this.positionFocus();
+        this.start();
+      });
+      this.bubbleResizeObserver.observe(bubble);
+    }
   }
 
   sync() {
