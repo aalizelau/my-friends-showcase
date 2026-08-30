@@ -1,8 +1,89 @@
 /* Source-informed adaptation of ImageTube in https://github.com/matdn/helmet.
- * Cylinder positions, staggered rows, differential speeds and inertia come from
- * FiberScene.tsx. CSS projection, dimensions, colors and input controls are our
- * own design choices. See docs/tube-reference for the preserved baseline.
+ * Cylinder positions, staggered rows and inertia come from FiberScene.tsx.
+ * Rows retain differential speeds; desktop uses compact projection-aware
+ * spacing. See docs/tube-reference for the preserved baseline.
  */
+
+// Fit the front-facing rows over the whole turn, not only their starting pose.
+// Rear cards may still be naturally occluded by cards on the front of the tube.
+function desktopRowSpacing({ radius, perspective, cardWidth, cardHeight, scale, gap }) {
+  const start = Math.asin(radius / perspective);
+  const samples = [];
+  const sampleCount = 540;
+  // Only cards that share horizontal screen space need vertical clearance.
+  // Sample independent row angles, so the fit does not rely on matching speeds.
+  for (let i = 0; i <= sampleCount; i++) {
+    const theta = start + (Math.PI - 2 * start) * i / sampleCount;
+    const row = [];
+    for (const cant of [.035, -.035]) {
+      const points = [];
+      for (const u of [-cardWidth / 2, cardWidth / 2]) for (const v of [-cardHeight / 2, cardHeight / 2]) {
+        const localX = (u * Math.cos(cant) - v * Math.sin(cant)) * scale;
+        const localY = (u * Math.sin(cant) + v * Math.cos(cant)) * scale;
+        const q = perspective / (perspective - radius * Math.sin(theta) + localX * Math.cos(theta));
+        points.push({ x: (radius * Math.cos(theta) + localX * Math.sin(theta)) * q, y: localY * q, q });
+      }
+      row.push({ points, left: Math.min(...points.map(p => p.x)), right: Math.max(...points.map(p => p.x)),
+        top: Math.min(...points.map(p => p.y)), bottom: Math.max(...points.map(p => p.y)) });
+    }
+    samples.push(row);
+  }
+  let spacing = 0;
+  for (const [outer] of samples) for (const [, middle] of samples) {
+    // Padding covers the horizontal motion between angular samples.
+    if (outer.right + 4 < middle.left || middle.right + 4 < outer.left) continue;
+    for (const point of outer.points) {
+      spacing = Math.max(spacing, (middle.bottom + gap + .5 - point.y) / point.q,
+        (point.y - middle.top + gap + .5) / point.q);
+    }
+  }
+  return spacing;
+}
+
+function desktopTubeLayout({ width, height, radius, perspective, rows, cardWidth, cardHeight }) {
+  const gap = 6;
+  const inset = 20;
+  const cant = .035;
+  const footprintWidth = cardWidth * Math.cos(cant) + cardHeight * Math.sin(cant);
+  const footprintHeight = cardHeight * Math.cos(cant) + cardWidth * Math.sin(cant);
+  const measure = (scale, compact = false) => {
+    const halfWidth = footprintWidth * scale / 2;
+    const halfHeight = footprintHeight * scale / 2;
+    // Bounds include the corners of the tilted card, not just its centre.
+    const nearestZ = Math.hypot(radius, halfWidth);
+    const maxProjection = perspective / (perspective - nearestZ);
+    const minFrontProjection = perspective / (perspective - radius * radius / perspective + halfWidth);
+    const spacing = rows === 3
+      ? compact ? desktopRowSpacing({ radius, perspective, cardWidth, cardHeight, scale, gap })
+        : halfHeight + (halfHeight * maxProjection + gap) / minFrontProjection
+      : rows === 2 ? halfHeight * 2 + gap / minFrontProjection : 0;
+    const projectedHalfHeight = ((rows - 1) / 2 * spacing + halfHeight) * maxProjection;
+    return { scale, spacing, projectedHalfHeight };
+  };
+  let low = 0;
+  let high = Math.min(1, width / 1100, height / 570);
+  for (let i = 0; i < 24; i++) {
+    const candidate = measure((low + high) / 2);
+    if (candidate.projectedHalfHeight <= height / 2 - inset) low = candidate.scale;
+    else high = candidate.scale;
+  }
+  if (rows !== 3) return measure(low);
+  // Enlarge the actual cards by up to 12%, using the unused space between
+  // horizontally staggered cards rather than increasing the Tube's height.
+  high = low * 1.12;
+  let result = measure(high, true);
+  if (result.projectedHalfHeight <= height / 2 - inset) return result;
+  result = measure(low);
+  for (let i = 0; i < 8; i++) {
+    const candidate = measure((low + high) / 2, true);
+    if (candidate.projectedHalfHeight <= height / 2 - inset) {
+      result = candidate;
+      low = candidate.scale;
+    } else high = candidate.scale;
+  }
+  return result;
+}
+
 export class FriendTube {
   constructor({ stage, world, gallery, cardMarkup, onOpen }) {
     this.stage = stage;
@@ -146,7 +227,7 @@ export class FriendTube {
         row,
         // SOURCE: alternating half-column offsets and cylindrical placement.
         theta: friends.length === 1 ? Math.PI / 2 : (index % this.columns + (row % 2 ? .5 : 0)) / count * Math.PI * 2 + .2,
-        speed: this.rows === 1 ? 1 : .65 + row / (this.rows - 1) * .9,
+        speed: 1,
       };
     });
     this.gallery.classList.toggle('is-small', friends.length < 5);
@@ -191,6 +272,18 @@ export class FriendTube {
     this.stage.style.perspective = `${this.perspective}px`;
     this.scale = this.mobile ? .7 : Math.min(1, width / 1100, this.stage.clientHeight / 570);
     this.spacing = this.stage.clientHeight * .16;
+    if (!this.mobile) {
+      const portrait = this.cards[0]?.el;
+      const layout = desktopTubeLayout({
+        width, height: this.stage.clientHeight, radius: this.radius, perspective: this.perspective,
+        rows: this.rows || 1, cardWidth: portrait?.offsetWidth || 128, cardHeight: portrait?.offsetHeight || 158
+      });
+      this.scale = layout.scale;
+      this.spacing = layout.spacing;
+    }
+    for (const card of this.cards) {
+      card.speed = this.rows > 1 ? .65 + card.row / (this.rows - 1) * .9 : 1;
+    }
     this.draw();
   }
 
