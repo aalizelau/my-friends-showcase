@@ -47,7 +47,6 @@ function avatarMarkup(friend) {
   if (src) return `<img class="avatar-img" src="${escapeHtml(src)}" alt="${escapeHtml(friend.name)} 的頭像" loading="lazy" />`;
   return avatarSvg(friend.avatar, friend.name);
 }
-let activeFilter = "all";
 let activeFriendId = null;
 let activeDetailTab = "now";
 let toastTimer;
@@ -56,8 +55,6 @@ let drawerCloseTimer;
 const els = {
   grid: document.querySelector("#friendsGrid"),
   empty: document.querySelector("#emptyState"),
-  search: document.querySelector("#searchInput"),
-  filterList: document.querySelector("#filterList"),
   resultCount: document.querySelector("#resultCount"),
   drawer: document.querySelector("#friendDrawer"),
   drawerContent: document.querySelector("#drawerContent"),
@@ -77,18 +74,12 @@ const stampBoard = new StampBoard({
   getFocusBubble: id => focusLineFor(state.friends.find(friend => friend.id === id)),
   organise: document.querySelector("#organiseStamps"),
   shuffle: document.querySelector("#shuffleStamps"),
-  sidebar: document.querySelector(".sidebar"),
   status: document.querySelector("#boardStatus"),
-  hint: document.querySelector("#filterHint"),
   onOpenProfile: openDrawer
 });
 
 function escapeHtml(value = "") {
   return String(value).replace(/[&<>'"]/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#039;", '"': "&quot;" })[char]);
-}
-
-function relationName(relation) {
-  return { close: "親近好友", work: "工作夥伴", community: "生活圈" }[relation] || "生活圈";
 }
 
 function avatarSvg(seed = 0, name = "") {
@@ -120,37 +111,18 @@ function latestInteraction(friend) {
   return [...(friend.interactions || [])].sort((a, b) => b.date.localeCompare(a.date))[0];
 }
 
-function filteredFriends() {
-  const query = els.search.value.trim().toLowerCase();
+function boardFriends() {
   return visibleFriends()
-    .filter(friend => activeFilter === "all" || friend.relation === activeFilter)
-    .filter(friend => {
-      const haystack = [friend.name, friend.nickname, friend.lifeUpdate, friend.note, ...(friend.interests || [])].join(" ").toLowerCase();
-      return haystack.includes(query);
-    })
     .sort((a, b) => (latestInteraction(b)?.date || "").localeCompare(latestInteraction(a)?.date || ""));
 }
 
 function render() {
-  const friends = filteredFriends();
+  const friends = boardFriends();
   els.resultCount.textContent = friends.length;
   els.empty.hidden = friends.length !== 0;
   els.grid.hidden = friends.length === 0;
-  document.querySelector(".board-caption").hidden = friends.length === 0;
   els.grid.innerHTML = friends.map(friendCard).join("");
   stampBoard.sync();
-
-  const visible = visibleFriends();
-  const counts = {
-    all: visible.length,
-    close: visible.filter(f => f.relation === "close").length,
-    work: visible.filter(f => f.relation === "work").length,
-    community: visible.filter(f => f.relation === "community").length
-  };
-  document.querySelector("#countAll").textContent = counts.all;
-  document.querySelector("#countClose").textContent = counts.close;
-  document.querySelector("#countWork").textContent = counts.work;
-  document.querySelector("#countCommunity").textContent = counts.community;
 }
 
 function friendCard(friend) {
@@ -189,12 +161,12 @@ function openDrawer(id) {
 
 function detailShellMarkup(friend) {
   const profile = profileFor(friend);
+  const subtitle = [friend.nickname, friend.birthYear ? `Born ${friend.birthYear}` : ""].filter(Boolean).join(" · ");
   return `<header class="detail-header">
       <div class="detail-avatar">${avatarMarkup(friend)}</div>
       <div class="detail-identity">
-        <p class="eyebrow">PERSON PROFILE</p>
         <h2>${escapeHtml(friend.name)}</h2>
-        <p>${escapeHtml(friend.nickname || relationName(friend.relation))}${friend.birthYear ? ` · Born ${friend.birthYear}` : ""}</p>
+        ${subtitle ? `<p>${escapeHtml(subtitle)}</p>` : ""}
       </div>
       <button class="primary-button detail-add" type="button" data-add-source="${escapeHtml(friend.id)}">＋ 新增記錄</button>
     </header>
@@ -211,8 +183,7 @@ function profileFor(friend) {
   const p = friend.profile || {};
   return {
     now: [
-      { label: "最新近況", value: friend.lifeUpdate || "尚未記錄", detail: friend.note || "從 Source 分頁新增一則記錄開始。", sources: [] },
-      { label: "關係", value: relationName(friend.relation), detail: friend.nickname || "", sources: [] }
+      { label: "最新近況", value: friend.lifeUpdate || "尚未記錄", detail: friend.note || "從 Source 分頁新增一則記錄開始。", sources: [] }
     ],
     recent: friend.lifeUpdate || "還沒有近期更新。",
     recentSources: [],
@@ -374,15 +345,6 @@ function showToast(message) {
   toastTimer = setTimeout(() => els.toast.classList.remove("show"), 2600);
 }
 
-els.search.addEventListener("input", render);
-els.filterList.addEventListener("click", event => {
-  const button = event.target.closest("button[data-filter]");
-  if (!button) return;
-  activeFilter = button.dataset.filter;
-  els.filterList.querySelectorAll("button").forEach(b => b.classList.toggle("active", b === button));
-  render();
-});
-
 ["openAddFriend", "emptyAddFriend"].forEach(id => document.querySelector(`#${id}`).addEventListener("click", () => openDialog(els.friendDialog)));
 document.querySelector("#closeDrawer").addEventListener("click", closeDrawer);
 els.drawerBackdrop.addEventListener("click", closeDrawer);
@@ -426,7 +388,7 @@ els.friendForm.addEventListener("submit", async event => {
   const payload = {
     name: data.get("name").trim(),
     nickname: data.get("nickname").trim(),
-    relation: data.get("relation"),
+    relation: "community", // Compatibility default until the backend category field is retired.
     birthday: data.get("birthday")
   };
   if (!payload.name) return;
@@ -440,7 +402,7 @@ els.friendForm.addEventListener("submit", async event => {
     state.visibleIds?.add(friend.id);
     render();
     closeDialog(els.friendDialog);
-    showToast(`已把 ${friend.name} 加進生活圈`);
+    showToast(`已新增 ${friend.name}`);
     setTimeout(() => openDrawer(friend.id), 180);
   } catch (err) {
     console.error("新增朋友失敗", err);
@@ -477,12 +439,6 @@ els.sourceForm.addEventListener("submit", async event => {
     showToast("儲存失敗，請確認伺服器有在執行");
   }
 });
-
-document.querySelector("#themeButton").addEventListener("click", () => {
-  document.body.classList.toggle("dark");
-  localStorage.setItem("inner-circle-theme", document.body.classList.contains("dark") ? "dark" : "light");
-});
-if (localStorage.getItem("inner-circle-theme") === "dark") document.body.classList.add("dark");
 
 document.addEventListener("keydown", event => {
   if (event.key === "Escape" && els.drawer.classList.contains("open")) closeDrawer();

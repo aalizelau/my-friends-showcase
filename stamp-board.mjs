@@ -68,8 +68,8 @@ export function focusGeometry(metrics, visibleTop = 0, visibleBottom = metrics.h
 }
 
 export class StampBoard {
-  constructor({ board, grid, controls, bubble, getFocusBubble, organise, shuffle, sidebar, status, hint, onOpenProfile }) {
-    Object.assign(this, { board, grid, controls, bubble, getFocusBubble, organise, shuffle, sidebar, status, hint, onOpenProfile });
+  constructor({ board, grid, controls, bubble, getFocusBubble, organise, shuffle, status, onOpenProfile }) {
+    Object.assign(this, { board, grid, controls, bubble, getFocusBubble, organise, shuffle, status, onOpenProfile });
     this.entries = new Map();
     this.mode = "shuffle";
     this.focusedId = null;
@@ -178,7 +178,6 @@ export class StampBoard {
       this.paint(entry);
     });
     this.organise.classList.toggle("active", mode === "organise");
-    this.hint.textContent = mode === "organise" ? "整齊收藏" : "隨心散落";
     this.status.textContent = mode === "organise" ? "已整理朋友郵票。" : "已重新散落朋友郵票，人物與頭像保持不變。";
     this.start();
   }
@@ -209,8 +208,6 @@ export class StampBoard {
     entry.element.classList.add("is-focused");
     entry.element.setAttribute("aria-expanded", "true");
     this.board.classList.add("has-focus");
-    this.sidebar.classList.add("is-softened");
-    this.sidebar.inert = true;
     this.organise.disabled = this.shuffle.disabled = true;
     for (const [otherId, other] of this.entries) {
       if (otherId !== id) {
@@ -257,8 +254,6 @@ export class StampBoard {
     const entry = this.entries.get(this.focusedId);
     this.focusedId = null;
     this.board.classList.remove("has-focus");
-    this.sidebar.classList.remove("is-softened");
-    this.sidebar.inert = false;
     this.organise.disabled = this.shuffle.disabled = false;
     this.controls.hidden = true;
     if (this.bubble) {
@@ -329,7 +324,6 @@ export class StampBoard {
         angle: clamp(drag.entry.current.angle + drag.vx * momentum * .04, -35, 35)
       }, this.metrics);
       drag.entry.goal = copy(drag.entry.home);
-      this.hint.textContent = "隨心擺放";
       this.organise.classList.remove("active");
       this.status.textContent = `已移動 ${drag.entry.element.dataset.friendName}。`;
       this.start();
@@ -355,7 +349,6 @@ export class StampBoard {
     entry.goal = copy(entry.home);
     entry.startAt = 0;
     entry.element.style.zIndex = String(++this.layer);
-    this.hint.textContent = "隨心擺放";
     this.organise.classList.remove("active");
     this.start();
   }

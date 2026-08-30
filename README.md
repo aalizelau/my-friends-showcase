@@ -14,6 +14,8 @@ node server.mjs
 
 ## 朋友收藏板
 
+- 介面只保留朋友收藏板、整理／散落、專注查看與新增朋友；固定淺色，不顯示搜尋、關係分類、宣傳區塊或頁尾。
+- 舊有 `relation` 資料暫時保留在後端，前端不顯示或要求選擇；新增朋友使用 `community` 作為相容預設值。
 - 每位朋友的頭像是一張可拖曳的郵票；拖曳放開後有輕微慣性，位置限制在板內。
 - **Organise** 排成置中的行列；**Shuffle** 重新散落位置與角度，不會更換朋友或頭像配對。
 - 點選郵票會置中放大，其他頭像模糊；可開啟原有朋友手帳。點空白處、「返回收藏」或 Escape 退出，回到原位置。
@@ -48,4 +50,5 @@ node server.mjs
 node scripts/migrate.mjs        # 一次性：JSON → md（初始遷移，資料來源已移除，僅存參考）
 node scripts/verify-roundtrip.mjs  # 測試：serialize(parse(md)) 與原檔逐位元組相同
 node --test scripts/verify-stamp-board.mjs  # 收藏板佈局、互動狀態與無障礙行為測試
+node --test scripts/verify-simplified-ui.mjs  # 精簡介面啟動、新增朋友與分類資料保留測試
 ```

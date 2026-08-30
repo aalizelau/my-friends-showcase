@@ -105,7 +105,7 @@ function fixture({ reducedMotion = false, lines = {} } = {}) {
   bubble.offsetHeight = 126;
   bubble.hidden = true;
   bubble.controls = { ".focus-bubble-text": new Element() };
-  const options = { board, grid, controls, bubble, getFocusBubble: id => lines[id], organise: new Element(), shuffle: new Element(), sidebar: new Element(), status: new Element(), hint: new Element() };
+  const options = { board, grid, controls, bubble, getFocusBubble: id => lines[id], organise: new Element(), shuffle: new Element(), status: new Element() };
   let openedProfile;
   const controller = new StampBoard({ ...options, onOpenProfile: id => { openedProfile = id; } });
   controller.sync();
@@ -117,14 +117,14 @@ function fixture({ reducedMotion = false, lines = {} } = {}) {
 }
 
 test("focus preserves position, blurs only peers, and restores keyboard focus on Escape", () => {
-  const { controller, board, sidebar, controls, organise, shuffle, settle } = fixture();
+  const { controller, board, controls, organise, shuffle, settle } = fixture();
   const entry = controller.entries.get("1");
   const original = { ...entry.current };
   controller.focus("1");
   settle();
   assert.equal(controller.focusedId, "1");
   assert.ok(board.classList.contains("has-focus"));
-  assert.ok(sidebar.inert && organise.disabled && shuffle.disabled);
+  assert.ok(organise.disabled && shuffle.disabled);
   assert.equal(controller.entries.get("2").element.inert, true);
   assert.equal(entry.element.attributes.get("aria-expanded"), "true");
   assert.equal(entry.current.scale, 1.5);
@@ -137,7 +137,6 @@ test("focus preserves position, blurs only peers, and restores keyboard focus on
   assert.deepEqual(entry.current, original);
   assert.equal(entry.element.wasFocused, true);
   assert.equal(controls.hidden, true);
-  assert.equal(sidebar.inert, false);
   assert.equal(controller.entries.get("2").element.inert, false);
 });
 
@@ -196,7 +195,7 @@ test("resize preserves a focused stamp and reclamps its restored position", () =
   for (const entry of controller.entries.values()) assertInBounds(entry.current, controller.metrics);
 });
 
-test("empty filters disable controls and returning results restores the board", () => {
+test("an empty collection disables controls and adding a friend restores the board", () => {
   const { controller, grid, board, organise, shuffle } = fixture();
   controller.focus("1");
   grid.children = [];

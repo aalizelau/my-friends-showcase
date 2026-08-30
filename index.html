@@ -3,7 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#f6f0e6" />
+    <meta name="theme-color" content="#f8f7f3" />
+    <meta name="color-scheme" content="light" />
     <meta
       name="description"
       content="一個用來記住朋友的興趣、近況與相處片段的私人關係手帳。"
@@ -18,15 +19,8 @@
           <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
           <span>inner circle.</span>
         </a>
-        <nav class="nav-links" aria-label="主要導覽">
-          <a class="active" href="#friends">朋友</a>
-          <a href="#about">關於</a>
-        </nav>
         <div class="header-actions">
-          <button class="icon-button" id="themeButton" type="button" aria-label="切換深色模式">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v2m0 14v2M4.2 4.2l1.4 1.4m12.8 12.8 1.4 1.4M3 12h2m14 0h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/><circle cx="12" cy="12" r="4"/></svg>
-          </button>
-          <button class="primary-button" id="openAddFriend" type="button">
+          <button class="primary-button" id="openAddFriend" type="button" aria-label="新增朋友">
             <span>＋</span> 新朋友
           </button>
         </div>
@@ -34,37 +28,12 @@
 
       <main id="top">
         <section class="content-section" id="friends" aria-labelledby="friends-title">
-          <div class="section-heading">
-            <div>
-              <p class="eyebrow">A LITTLE COLLECTION OF MY PEOPLE</p>
-              <h1 id="friends-title">我的朋友們<span>。</span></h1>
-              <p class="section-subtitle">把每張臉孔，收在心上。</p>
-            </div>
-            <p class="collection-note">Some people make<br />the world feel smaller.</p>
-          </div>
+          <h1 class="sr-only" id="friends-title">朋友</h1>
 
           <div class="workspace">
-            <aside class="sidebar">
-              <label class="search-box" for="searchInput">
-                <span class="sr-only">搜尋朋友</span>
-                <input id="searchInput" type="search" placeholder="找一位朋友…" autocomplete="off" />
-              </label>
-
-              <div class="filter-block">
-                <span class="filter-label">關係</span>
-                <div class="filter-list" id="filterList">
-                  <button class="active" type="button" data-filter="all"><span>全部</span><b id="countAll">0</b></button>
-                  <button type="button" data-filter="close"><span>親近好友</span><b id="countClose">0</b></button>
-                  <button type="button" data-filter="work"><span>工作夥伴</span><b id="countWork">0</b></button>
-                  <button type="button" data-filter="community"><span>生活圈</span><b id="countCommunity">0</b></button>
-                </div>
-              </div>
-
-            </aside>
-
             <div class="friends-area">
               <div class="result-bar">
-                <p><strong id="resultCount">0</strong> 位朋友 <span class="result-divider">/</span> <span id="filterHint">隨心散落</span></p>
+                <p><strong id="resultCount">0</strong> 位朋友</p>
                 <div class="board-actions" aria-label="整理朋友郵票">
                   <button id="organiseStamps" type="button"><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="3" y="3" width="5" height="5" rx=".5"/><rect x="12" y="3" width="5" height="5" rx=".5"/><rect x="3" y="12" width="5" height="5" rx=".5"/><rect x="12" y="12" width="5" height="5" rx=".5"/></svg>Organise</button>
                   <button id="shuffleStamps" type="button"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 5h2c4 0 6 10 10 10h2m-3-3 3 3-3 3M3 15h2c1.5 0 2.7-1.4 4-3.2M11 8.2C12.3 6.4 13.5 5 15 5h2m-3-3 3 3-3 3"/></svg>Shuffle</button>
@@ -81,31 +50,16 @@
                   <button class="focus-close" id="closeStampFocus" type="button" aria-label="退出專注模式">返回收藏 <kbd>esc</kbd></button>
                 </div>
               </div>
-              <div class="board-caption" id="boardHelp"><span>拖曳，隨心擺放。點一下，靠近一點。<span class="sr-only">以 Tab 選取朋友，方向鍵移動，Enter 進入專注模式，Escape 返回。</span></span><span aria-hidden="true">A CIRCLE, ALWAYS GROWING.</span></div>
+              <p class="sr-only" id="boardHelp">拖曳可移動郵票，點選可進入專注模式。以 Tab 選取朋友，方向鍵移動，Enter 進入專注模式，Escape 返回。</p>
               <p class="sr-only" id="boardStatus" role="status" aria-live="polite"></p>
               <div class="empty-state" id="emptyState" hidden>
-                <span>◌</span>
-                <h3>還沒有找到這位朋友</h3>
-                <p>試試別的關鍵字，或把他加進你的生活圈。</p>
+                <h3>還沒有朋友</h3>
                 <button class="secondary-button" id="emptyAddFriend" type="button">新增朋友</button>
               </div>
             </div>
           </div>
         </section>
-
-
-        <section class="about-section" id="about">
-          <span class="about-symbol" aria-hidden="true">✦</span>
-          <p>“我們記得的細節，<br />會成為別人被好好看見的證明。”</p>
-          <span class="about-caption">— Inner Circle</span>
-        </section>
       </main>
-
-      <footer>
-        <a class="brand footer-brand" href="#top"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span><span>inner circle.</span></a>
-        <p>一個安靜、私人的朋友手帳。資料只留在這台裝置。</p>
-        <span>Made with care · 2026</span>
-      </footer>
     </div>
 
     <div class="drawer-backdrop" id="drawerBackdrop" hidden></div>
@@ -118,20 +72,18 @@
       <form id="friendForm">
         <div class="dialog-header">
           <div>
-            <p class="eyebrow">NEW PERSON</p>
-            <h2>記住一位新朋友</h2>
+            <h2>新增朋友</h2>
           </div>
           <button class="icon-button dialog-close" type="button" data-close-dialog="friendDialog" aria-label="關閉">×</button>
         </div>
         <div class="form-grid">
           <label><span>名字 *</span><input name="name" required placeholder="例如：林小雨" /></label>
           <label><span>暱稱</span><input name="nickname" placeholder="你怎麼稱呼他？" /></label>
-          <label><span>關係</span><select name="relation"><option value="close">親近好友</option><option value="work">工作夥伴</option><option value="community">生活圈</option></select></label>
           <label><span>生日</span><input name="birthday" type="date" /></label>
         </div>
         <div class="dialog-actions">
           <button class="text-button" type="button" data-close-dialog="friendDialog">取消</button>
-          <button class="primary-button" type="submit">加入我的生活圈</button>
+          <button class="primary-button" type="submit">新增朋友</button>
         </div>
       </form>
     </dialog>
