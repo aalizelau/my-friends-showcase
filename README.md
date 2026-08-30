@@ -14,7 +14,7 @@ node server.mjs
 
 ## 朋友收藏板
 
-- 首頁預設 **Tube** 環繞相簿，**Stamps** 可切回朋友郵票收藏板；固定淺色，不顯示搜尋、關係分類、宣傳區塊或頁尾。
+- 首頁預設 **Tube** 環繞相簿，**Ring** 是橫向轉盤，**Stamps** 是朋友郵票收藏板；固定淺色，不顯示搜尋、關係分類、宣傳區塊或頁尾。
 - 舊有 `relation` 資料暫時保留在後端，前端不顯示或要求選擇；新增朋友使用 `community` 作為相容預設值。
 - 每位朋友的頭像是一張可拖曳的郵票；拖曳放開後有輕微慣性，位置限制在板內。
 - **Organise** 排成置中的行列；**Shuffle** 重新散落位置與角度，不會更換朋友或頭像配對。
@@ -29,6 +29,10 @@ node server.mjs
 Tube 沿用 `redesign-friends-tube` 的圓筒排列、左右拖曳、方向按鈕與播放／暫停；點選朋友開啟手帳。手帳與對話框開啟、切換到 Stamps 或畫面不可見時停止動畫。系統設定減少動態效果時預設暫停。兩個檢視共用朋友與頭像配對，保留手寫名字。
 
 圓筒實作改編自 matdn/helmet 的 ImageTube，以原生 JavaScript 和 CSS 3D 實作，不使用外部 CDN。原分支的參考證據保存在 `docs/tube-reference/`；其中截圖與 QA 記錄只描述合併前的設計。
+
+## 橫向轉盤
+
+Ring 沿用 `viscose-carousel` 的橫向大圓弧、慣性與吸附。左右拖曳、捲動或使用方向按鈕轉動；點選側邊頭像置中，再點中央頭像開啟手帳。使用相同朋友與頭像（未分配圖片的朋友沿用 SVG 頭像），只顯示手寫名字。支援鍵盤、減少動態效果；閒置、隱藏、手帳開啟或離開 Ring 時停止動畫，不啟用原分支的直向全螢幕模式。
 
 ## 資料
 
@@ -58,4 +62,5 @@ node scripts/verify-roundtrip.mjs  # 測試：serialize(parse(md)) 與原檔逐�
 node --test scripts/verify-stamp-board.mjs  # 收藏板佈局、互動狀態與無障礙行為測試
 node --test scripts/verify-simplified-ui.mjs  # 精簡介面啟動、新增朋友與分類資料保留測試
 node scripts/verify-tube.mjs  # 圓筒動畫、減少動態、拖曳與空結果測試
+node --test scripts/verify-carousel.mjs  # 橫向轉盤幾何、輸入與動畫生命週期測試
 ```

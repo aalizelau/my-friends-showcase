@@ -12,6 +12,7 @@
     <title>Inner Circle — 朋友手帳</title>
     <link rel="stylesheet" href="styles.css" />
     <link rel="stylesheet" href="tube.css" />
+    <link rel="stylesheet" href="carousel.css" />
   </head>
   <body>
     <div class="app-shell">
@@ -45,12 +46,19 @@
                   <button id="organiseStamps" type="button"><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="3" y="3" width="5" height="5" rx=".5"/><rect x="12" y="3" width="5" height="5" rx=".5"/><rect x="3" y="12" width="5" height="5" rx=".5"/><rect x="12" y="12" width="5" height="5" rx=".5"/></svg>Organise</button>
                   <button id="shuffleStamps" type="button"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 5h2c4 0 6 10 10 10h2m-3-3 3 3-3 3M3 15h2c1.5 0 2.7-1.4 4-3.2M11 8.2C12.3 6.4 13.5 5 15 5h2m-3-3 3 3-3 3"/></svg>Shuffle</button>
                 </div>
+                <div class="ring-controls" id="ringControls" role="group" aria-label="橫向轉盤控制" hidden>
+                  <button type="button" id="ringPrevious" aria-label="上一位朋友">←</button>
+                  <button type="button" id="ringNext" aria-label="下一位朋友">→</button>
+                </div>
                 <div class="collection-views" role="group" aria-label="檢視方式">
                   <button type="button" id="tubeView" class="active" aria-pressed="true" aria-controls="tubeGallery">Tube</button>
+                  <button type="button" id="ringView" aria-pressed="false" aria-controls="carouselMode">Ring</button>
                   <button type="button" id="stampsView" aria-pressed="false" aria-controls="stampBoard">Stamps</button>
                 </div>
                 </div>
               </div>
+              <div id="carouselMode" role="region" aria-label="朋友橫向轉盤" aria-describedby="ringHelp" hidden></div>
+              <p class="sr-only" id="ringHelp">左右拖曳、捲動或使用方向鍵轉動。點選側邊朋友移到中央，再點選中央朋友開啟手帳。</p>
               <div class="tube-gallery" id="tubeGallery" hidden>
                 <div class="tube-stage" id="tubeStage" role="region" aria-label="朋友環繞相簿" aria-describedby="tubeHelp">
                   <div class="tube-orbit tube-orbit-top" aria-hidden="true"></div>

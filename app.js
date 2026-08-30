@@ -1,6 +1,7 @@
 // 朋友資料改由後端讀取層提供（data/friends/*.md）；見 server.mjs 與 docs/profile-schema.md
 import { StampBoard } from "./stamp-board.mjs";
 import { FriendTube } from "./tube.js";
+import { RingCarousel } from "./carousel.js";
 import { focusLineFor, selectBoardFriends } from "./focus-lines.mjs";
 
 const palettes = [
@@ -53,6 +54,7 @@ let activeDetailTab = "now";
 let toastTimer;
 let drawerCloseTimer;
 let activeView = "tube";
+let carousel = null;
 
 const els = {
   grid: document.querySelector("#friendsGrid"),
@@ -131,6 +133,8 @@ function render() {
   els.grid.hidden = friends.length === 0;
   els.grid.innerHTML = friends.map(friendCard).join("");
   tube.setFriends(friends);
+  carousel?.destroy();
+  carousel = null;
   updateView();
 }
 
@@ -139,10 +143,26 @@ function updateView() {
   document.querySelector("#stampBoard").hidden = activeView !== "stamps" || !hasFriends;
   document.querySelector("#stampActions").hidden = activeView !== "stamps";
   document.querySelector("#tubeControls").hidden = activeView !== "tube";
+  document.querySelector("#ringControls").hidden = activeView !== "ring";
+  document.querySelector("#carouselMode").hidden = activeView !== "ring" || !hasFriends;
   tube.setEnabled(activeView === "tube" && hasFriends);
+  if (activeView === "ring" && hasFriends) {
+    if (!carousel) carousel = new RingCarousel({
+      mount: document.querySelector("#carouselMode"),
+      orientation: "horizontal",
+      items: boardFriends().map(friend => ({ id: friend.id, name: friend.name,
+        markup: avatarMarkup(friend).replace('loading="lazy"', 'loading="eager" draggable="false"') })),
+      onOpen: openDrawer
+    });
+    carousel.setSuspended(!!activeFriendId || document.body.classList.contains("dialog-open"));
+  } else {
+    carousel?.destroy();
+    carousel = null;
+  }
+  for (const id of ["ringPrevious", "ringNext"]) document.querySelector(`#${id}`).disabled = visibleFriends().length < 2;
   // Measure only after the stamp board is visible, never at a hidden width of zero.
   if (activeView === "stamps") stampBoard.sync();
-  for (const view of ["tube", "stamps"]) {
+  for (const view of ["tube", "ring", "stamps"]) {
     const button = document.querySelector(`#${view}View`);
     button.classList.toggle("active", activeView === view);
     button.setAttribute("aria-pressed", String(activeView === view));
@@ -181,6 +201,7 @@ function openDrawer(id) {
   if (!friend) return;
   stampBoard.closeFocus(false);
   tube.setSuspended(true);
+  carousel?.setSuspended(true);
   activeFriendId = id;
   activeDetailTab = "now";
   clearTimeout(drawerCloseTimer);
@@ -334,9 +355,11 @@ function closeDrawer() {
   activeFriendId = null;
   const returnCard = activeView === "tube"
     ? [...document.querySelector("#tubeWorld").children].find(card => card.dataset.friendId === returnId)
+    : activeView === "ring" ? carousel?.cards.find(card => card.item.id === returnId)?.el
     : stampBoard.entries.get(returnId)?.element;
   (returnCard || document.querySelector(`#${activeView}View`)).focus({ preventScroll: true });
   tube.setSuspended(document.body.classList.contains("dialog-open"));
+  carousel?.setSuspended(document.body.classList.contains("dialog-open"));
   if (/^#\/friend\//.test(location.hash)) history.replaceState(null, "", location.pathname + location.search); // 清掉網址上的朋友 hash
 }
 
@@ -345,12 +368,14 @@ function openDialog(dialog) {
   dialog.showModal();
   document.body.classList.add("dialog-open");
   tube.setSuspended(true);
+  carousel?.setSuspended(true);
 }
 
 function closeDialog(dialog) {
   dialog.close();
   document.body.classList.remove("dialog-open");
   tube.setSuspended(els.drawer.classList.contains("open"));
+  carousel?.setSuspended(els.drawer.classList.contains("open"));
 }
 
 // 新增一條原始記錄到某位朋友（抽屜「＋新增記錄」）；純手動，AI 不改
@@ -429,9 +454,13 @@ document.querySelectorAll("dialog").forEach(dialog => dialog.addEventListener("c
 document.querySelectorAll("dialog").forEach(dialog => dialog.addEventListener("close", () => {
   document.body.classList.remove("dialog-open");
   tube.setSuspended(els.drawer.classList.contains("open"));
+  carousel?.setSuspended(els.drawer.classList.contains("open"));
 }));
 document.querySelector("#tubeView").addEventListener("click", () => setView("tube"));
 document.querySelector("#stampsView").addEventListener("click", () => setView("stamps"));
+document.querySelector("#ringView").addEventListener("click", () => setView("ring"));
+document.querySelector("#ringPrevious").addEventListener("click", () => carousel?.turn(-1));
+document.querySelector("#ringNext").addEventListener("click", () => carousel?.turn(1));
 
 els.friendForm.addEventListener("submit", async event => {
   event.preventDefault();

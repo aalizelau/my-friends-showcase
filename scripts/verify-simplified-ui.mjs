@@ -6,11 +6,12 @@ import { runInNewContext } from "node:vm";
 const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
 const css = await readFile(new URL("../styles.css", import.meta.url), "utf8");
 const tubeCss = await readFile(new URL("../tube.css", import.meta.url), "utf8");
+const carouselCss = await readFile(new URL("../carousel.css", import.meta.url), "utf8");
 const app = await readFile(new URL("../app.js", import.meta.url), "utf8");
 
 test("the collection has no search, category UI, dark theme, footer or marketing sections", () => {
   assert.doesNotMatch(html, /themeButton|searchInput|filterList|data-filter|name="relation"|<footer|id="about"|collection-note|section-subtitle|nav-links/);
-  assert.doesNotMatch(css + tubeCss, /body\.dark|\.search-box|\.filter-list|\.sidebar|\.about-section/);
+  assert.doesNotMatch(css + tubeCss + carouselCss, /body\.dark|\.search-box|\.filter-list|\.sidebar|\.about-section/);
   assert.doesNotMatch(html, /tube-center|circle-intro|tube-portrait-relation/);
   assert.doesNotMatch(app, /inner-circle-theme|activeFilter|relationName|els\.search|els\.filterList/);
   assert.match(html, /name="color-scheme" content="light"/);
@@ -56,6 +57,7 @@ async function startApplication(friends) {
   nodes.set(".app-shell", new Element());
   const writes = [];
   let tube, stamps;
+  const rings = [];
   const sandbox = {
     document: {
       querySelector: selector => nodes.get(selector) || null,
@@ -91,6 +93,16 @@ async function startApplication(friends) {
       setEnabled(enabled) { this.enabled = enabled; this.options.gallery.hidden = !enabled; }
       setSuspended(suspended) { this.suspended = suspended; }
     },
+    RingCarousel: class {
+      constructor(options) {
+        this.options = options;
+        this.cards = options.items.map(item => ({ item, el: new Element() }));
+        rings.push(this);
+      }
+      setSuspended(suspended) { this.suspended = suspended; }
+      turn(direction) { this.lastTurn = direction; }
+      destroy() { this.destroyed = true; }
+    },
     selectBoardFriends: records => records.slice(),
     focusLineFor: () => null,
     setTimeout: () => 1,
@@ -110,7 +122,7 @@ async function startApplication(friends) {
   const executable = app.replace(/^import .*;\n/gm, "").replace(/^init\(\);$/m, "globalThis.ready = init();");
   runInNewContext(`${executable}\nglobalThis.profileMarkup = detailShellMarkup; globalThis.closeProfile = closeDrawer;`, sandbox);
   await sandbox.ready;
-  return { nodes, writes, tube, stamps, closeProfile: sandbox.closeProfile, profileMarkup: sandbox.profileMarkup };
+  return { nodes, writes, tube, stamps, rings, closeProfile: sandbox.closeProfile, profileMarkup: sandbox.profileMarkup };
 }
 
 test("startup displays every selected category without relying on removed controls", async () => {
@@ -162,6 +174,29 @@ test("opening profiles and dialogs suspends Tube and closing restores the right 
   tube.options.onOpen("1");
   nodes.get("#sourceDialog").events.get("close")();
   assert.equal(tube.suspended, true, "Closing a source dialog must not animate behind the profile");
+});
+
+test("Ring shares friend data, pauses behind profiles, and is destroyed when switching views", async () => {
+  const { nodes, tube, rings, closeProfile } = await startApplication([{ id: "1", name: "Friend", relation: "work" }]);
+  nodes.get("#ringView").events.get("click")();
+  assert.equal(tube.enabled, false);
+  assert.equal(nodes.get("#carouselMode").hidden, false);
+  assert.equal(nodes.get("#stampBoard").hidden, true);
+  assert.equal(nodes.get("#ringView").attributes.get("aria-pressed"), "true");
+  const ring = rings[0];
+  assert.equal(ring.options.orientation, "horizontal");
+  assert.equal(ring.cards[0].item.id, "1");
+  assert.ok(ring.cards[0].item.markup, "New friends must not disappear when they lack an assigned image");
+  assert.equal(ring.cards[0].item.rel, undefined);
+  ring.options.onOpen("1");
+  assert.equal(ring.suspended, true);
+  closeProfile();
+  assert.equal(ring.suspended, false);
+  assert.equal(ring.cards[0].el.wasFocused, true);
+  nodes.get("#tubeView").events.get("click")();
+  assert.equal(ring.destroyed, true);
+  assert.equal(nodes.get("#carouselMode").hidden, true);
+  assert.equal(tube.enabled, true);
 });
 
 test("a friend can be added to an empty collection without choosing a category", async () => {
