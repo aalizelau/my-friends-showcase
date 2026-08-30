@@ -58,6 +58,9 @@
               <button id="listView" type="button" aria-label="列表檢視">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h12M8 12h12M8 18h12"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/></svg>
               </button>
+              <button id="carouselView" type="button" aria-label="轉盤檢視">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="4.5" r="1.6"/><circle cx="12" cy="19.5" r="1.6"/><circle cx="4.5" cy="12" r="1.6"/></svg>
+              </button>
             </div>
           </div>
 
@@ -163,7 +166,16 @@
       </form>
     </dialog>
 
+    <div id="carouselMode" aria-hidden="true">
+      <div class="carousel-topbar">
+        <p class="eyebrow">CAROUSEL · 朋友轉盤</p>
+        <button class="icon-button carousel-close" id="carouselClose" type="button" aria-label="離開轉盤模式">×</button>
+      </div>
+      <p class="carousel-hint">滾動或拖曳轉動　·　點卡片轉到正面，再點一次開啟朋友</p>
+    </div>
+
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script src="carousel.js"></script>
     <script src="app.js"></script>
   </body>
 </html>

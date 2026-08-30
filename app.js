@@ -461,10 +461,47 @@ els.sourceForm.addEventListener("submit", async event => {
 
 document.querySelector("#gridView").addEventListener("click", () => setView("grid"));
 document.querySelector("#listView").addEventListener("click", () => setView("list"));
+document.querySelector("#carouselView").addEventListener("click", () => setView("carousel"));
+document.querySelector("#carouselClose").addEventListener("click", () => setView("grid"));
 function setView(view) {
   els.grid.classList.toggle("list-mode", view === "list");
   document.querySelector("#gridView").classList.toggle("active", view === "grid");
   document.querySelector("#listView").classList.toggle("active", view === "list");
+  document.querySelector("#carouselView").classList.toggle("active", view === "carousel");
+  if (view === "carousel") enterCarousel(); else exitCarousel();
+}
+
+// --- 轉盤模式：朋友臉孔繞著大輪盤（移植自 Viscose-carousel，去掉卡片間的黏稠連結）---
+let carouselInstance = null;
+const carouselMode = document.querySelector("#carouselMode");
+function enterCarousel() {
+  if (carouselInstance) return;
+  const items = visibleFriends()
+    .filter(friend => state.faceOf[friend.id])
+    .map(friend => ({ src: state.faceOf[friend.id], id: friend.id, name: friend.name, rel: relationName(friend.relation) }));
+  if (!items.length) { showToast("目前沒有可顯示的頭像"); setView("grid"); return; }
+  carouselMode.classList.add("active");
+  carouselMode.setAttribute("aria-hidden", "false");
+  document.body.classList.add("carousel-open");
+  try {
+    carouselInstance = new RingCarousel({
+      mount: carouselMode,
+      items,
+      onOpen: id => { setView("grid"); openDrawer(id); }
+    });
+  } catch (err) {
+    console.error("轉盤初始化失敗", err);
+    showToast("轉盤模式無法啟動");
+    exitCarousel();
+    document.querySelector("#carouselView").classList.remove("active");
+    document.querySelector("#gridView").classList.add("active");
+  }
+}
+function exitCarousel() {
+  if (carouselInstance) { carouselInstance.destroy(); carouselInstance = null; }
+  carouselMode.classList.remove("active");
+  carouselMode.setAttribute("aria-hidden", "true");
+  document.body.classList.remove("carousel-open");
 }
 
 document.querySelector("#themeButton").addEventListener("click", () => {
@@ -474,7 +511,9 @@ document.querySelector("#themeButton").addEventListener("click", () => {
 if (localStorage.getItem("inner-circle-theme") === "dark") document.body.classList.add("dark");
 
 document.addEventListener("keydown", event => {
-  if (event.key === "Escape" && els.drawer.classList.contains("open")) closeDrawer();
+  if (event.key !== "Escape") return;
+  if (carouselInstance) setView("grid");
+  else if (els.drawer.classList.contains("open")) closeDrawer();
 });
 
 // 每位朋友各自的 URL：#/friend/<id>。深連結、分享、書籤、返回鍵都可用。

@@ -346,3 +346,47 @@ body.dark .now-item p, body.dark .profile-event p, body.dark .source-entry pre {
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; }
 }
+
+/* --- Carousel mode: ring/wheel of friend faces (spirit-port of Viscose, minus the goo) --- */
+body.carousel-open { overflow: hidden; }
+#carouselMode {
+  position: fixed; inset: 0; z-index: 60; background: var(--paper);
+  display: none; opacity: 0; transition: opacity .4s ease;
+  overflow: hidden; touch-action: none;
+}
+#carouselMode.active { display: block; opacity: 1; }
+.carousel-stage { position: absolute; inset: 0; }
+.carousel-card {
+  position: absolute; left: 0; top: 0; margin: 0;
+  transform-origin: center; will-change: transform, opacity;
+  cursor: pointer; user-select: none;
+}
+.carousel-card img {
+  width: 100%; height: 100%; object-fit: contain; display: block;
+  -webkit-user-drag: none; pointer-events: none;
+  filter: drop-shadow(0 22px 30px rgba(24, 34, 30, .18));
+}
+.carousel-meta {
+  position: absolute; transform: translateY(-50%);
+  opacity: 0; pointer-events: none;
+}
+.carousel-meta.show { opacity: 1; }
+.carousel-meta.swap { animation: carouselMetaSwap .5s ease; }
+@keyframes carouselMetaSwap { from { opacity: 0; transform: translateY(-50%) translateY(6px); } to { opacity: 1; transform: translateY(-50%); } }
+.carousel-meta__idx { font-size: 13px; letter-spacing: .12em; color: var(--muted); }
+.carousel-meta__name { margin: 4px 0 6px; font-size: clamp(26px, 3vw, 44px); letter-spacing: -.04em; line-height: 1.02; }
+.carousel-meta__rel { font-size: 13px; color: var(--muted); }
+.carousel-topbar {
+  position: absolute; z-index: 2; top: 0; left: 0; right: 0;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 22px clamp(20px, 4vw, 48px); pointer-events: none;
+}
+.carousel-topbar .eyebrow { margin: 0; }
+.carousel-close { pointer-events: auto; }
+.carousel-hint {
+  position: absolute; z-index: 2; left: 0; right: 0; bottom: 26px; margin: 0;
+  text-align: center; font-size: 12px; letter-spacing: .04em; color: var(--muted); pointer-events: none;
+}
+@media (max-width: 720px) {
+  .carousel-meta { left: 50% !important; transform: translate(-50%, 0); top: auto !important; bottom: 84px; text-align: center; max-width: 86vw !important; }
+}
