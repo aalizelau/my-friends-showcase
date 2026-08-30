@@ -55,6 +55,42 @@ let toastTimer;
 let drawerCloseTimer;
 let activeView = "tube";
 let carousel = null;
+const topicExpansion = new Map();
+
+function topicExpansionStorageKey(friendId) {
+  return `my-friends.topic-expansion.v1:${encodeURIComponent(friendId)}`;
+}
+
+function topicExpansionFor(friendId) {
+  if (!topicExpansion.has(friendId)) {
+    let entries = [];
+    try {
+      const saved = JSON.parse(localStorage.getItem(topicExpansionStorageKey(friendId)));
+      if (Array.isArray(saved)) entries = saved.filter(entry => Array.isArray(entry) && entry.length === 2 && typeof entry[0] === "string" && typeof entry[1] === "boolean");
+    } catch { /* Unavailable or invalid storage must not prevent opening a profile. */ }
+    topicExpansion.set(friendId, new Map(entries));
+  }
+  return topicExpansion.get(friendId);
+}
+
+function rememberTopicExpansion() {
+  if (activeFriendId === null || activeDetailTab !== "topics") return;
+  const list = els.drawer.querySelector(".topic-list");
+  if (!list || list.dataset.topicFriend !== String(activeFriendId)) return;
+  const saved = topicExpansionFor(activeFriendId);
+  let changed = false;
+  list.querySelectorAll("details[data-topic-key]").forEach(topic => {
+    const key = topic.dataset.topicKey;
+    if (saved.get(key) !== topic.open) {
+      saved.set(key, topic.open);
+      changed = true;
+    }
+  });
+  if (!changed) return;
+  try {
+    localStorage.setItem(topicExpansionStorageKey(activeFriendId), JSON.stringify([...saved]));
+  } catch { /* Keep the preference in memory when browser storage is blocked or full. */ }
+}
 
 const els = {
   grid: document.querySelector("#friendsGrid"),
@@ -200,6 +236,7 @@ function formatDate(value, short = false) {
 function openDrawer(id) {
   const friend = state.friends.find(f => f.id === id);
   if (!friend) return;
+  rememberTopicExpansion();
   stampBoard.closeFocus(false);
   tube.setSuspended(true);
   carousel?.setSuspended(true);
@@ -260,7 +297,7 @@ function profileFor(friend) {
 function detailTabMarkup(friend, tab) {
   const profile = profileFor(friend);
   if (tab === "us") return usMarkup(profile);
-  if (tab === "topics") return topicsMarkup(profile);
+  if (tab === "topics") return topicsMarkup(profile, friend.id);
   if (tab === "timeline") return profileTimelineMarkup(profile);
   if (tab === "source") return sourcesMarkup(profile);
   return nowMarkup(profile);
@@ -275,8 +312,7 @@ function usMarkup(profile) {
   const todoList = todo.length
     ? `<ul class="todo-list">${todo.map(t => `<li>${escapeHtml(t.text)}${sourceButtons(t.sources)}</li>`).join("")}</ul>`
     : `<p class="us-empty">還沒有想一起做或聊的事。</p>`;
-  return `<div class="detail-intro"><span>Between us</span><p>你們的友誼高光，還有下次想一起做、想聊的事。</p></div>
-    <section class="us-block"><h3 class="us-h">友誼高光</h3>${highlights}</section>
+  return `<section class="us-block"><h3 class="us-h">友誼高光</h3>${highlights}</section>
     <section class="us-block"><h3 class="us-h">下次可以…</h3>${todoList}</section>`;
 }
 
@@ -286,8 +322,7 @@ function sourceButtons(ids = []) {
 }
 
 function nowMarkup(profile) {
-  return `<div class="detail-intro"><span>Current snapshot</span><p>AI 整理出的「現在」。每一段都可以回到原始記錄。</p></div>
-    <div class="now-grid">${profile.now.map(item => `<section class="now-item">
+  return `<div class="now-grid">${profile.now.map(item => `<section class="now-item">
       <span>${escapeHtml(item.label)}</span>
       <h3>${escapeHtml(item.value)}</h3>
       <p>${escapeHtml(item.detail)}</p>
@@ -299,17 +334,25 @@ function nowMarkup(profile) {
     </section>`;
 }
 
-function topicsMarkup(profile) {
-  return `<div class="detail-intro"><span>Organized by topic</span><p>同一段資料可以同時屬於分類，也出現在時間線。</p></div>
-    <div class="topic-list">${profile.topics.map((topic, index) => `<details class="topic-item" ${index === 0 ? "open" : ""}>
+function topicsMarkup(profile, friendId) {
+  const saved = topicExpansionFor(friendId);
+  const occurrences = new Map();
+  return `<div class="topic-list" data-topic-friend="${escapeHtml(friendId)}">${profile.topics.map((topic, index) => {
+    // Titles survive reordering; an occurrence suffix keeps duplicate titles independent.
+    const identity = JSON.stringify(topic.id != null ? ["id", topic.id] : ["title", topic.title]);
+    const occurrence = occurrences.get(identity) || 0;
+    occurrences.set(identity, occurrence + 1);
+    const key = encodeURIComponent(JSON.stringify([identity, occurrence]));
+    const open = saved.has(key) ? saved.get(key) : index === 0;
+    return `<details class="topic-item" data-topic-key="${escapeHtml(key)}" ${open ? "open" : ""}>
       <summary><span>${String(index + 1).padStart(2, "0")}</span><strong>${escapeHtml(topic.title)}</strong><i>＋</i></summary>
       <div class="topic-content"><p>${escapeHtml(topic.summary)}</p>${topic.points?.length ? `<ul>${topic.points.map(point => `<li>${escapeHtml(point)}</li>`).join("")}</ul>` : ""}${sourceButtons(topic.sources)}</div>
-    </details>`).join("")}</div>`;
+    </details>`;
+  }).join("")}</div>`;
 }
 
 function profileTimelineMarkup(profile) {
-  return `<div class="detail-intro"><span>Changes over time</span><p>計劃、轉折與目前狀態不會互相覆蓋。</p></div>
-    <div class="profile-timeline">${profile.timeline.map(item => `<article class="profile-event">
+  return `<div class="profile-timeline">${profile.timeline.map(item => `<article class="profile-event">
       <time>${escapeHtml(item.date)}</time>
       <div><span>${escapeHtml(item.category)}</span><h3>${escapeHtml(item.title)}</h3><p>${escapeHtml(item.description)}</p>${sourceButtons([item.source])}</div>
     </article>`).join("")}</div>`;
@@ -322,8 +365,7 @@ function sourcesMarkup(profile, targetId = "") {
       <header class="source-group-header"><h2>${escapeHtml(title)}</h2><span>${escapeHtml(description)}</span><b>${sources.length}</b></header>
       <div class="source-list">${sources.map(source => sourceEntryMarkup(source, targetId)).join("")}</div>
     </section>` : "";
-  return `<div class="detail-intro source-intro"><span>Raw · 只由你手動編輯</span><p>原文只由你手動編輯，AI 不會改寫；上面的所有整理都只是可重建的視圖。</p></div>
-    ${sourceGroup("Archive", "日期不詳的原始筆記", archiveSources, "archive-group")}
+  return `${sourceGroup("Archive", "日期不詳的原始筆記", archiveSources, "archive-group")}
     ${sourceGroup("新加入的 Source", "具有明確加入日期的原始記錄", newSources)}`;
 }
 
@@ -337,15 +379,20 @@ function sourceEntryMarkup(source, targetId = "") {
 function switchDetailTab(tab, sourceId = "") {
   const friend = state.friends.find(item => item.id === activeFriendId);
   if (!friend) return;
+  rememberTopicExpansion();
+  const scrollTop = els.drawer.scrollTop;
   activeDetailTab = tab;
   els.drawer.querySelectorAll("[data-detail-tab]").forEach(button => button.classList.toggle("active", button.dataset.detailTab === tab));
   const panel = document.querySelector("#detailPanel");
   panel.innerHTML = tab === "source" ? sourcesMarkup(profileFor(friend), sourceId) : detailTabMarkup(friend, tab);
-  const target = tab === "source" && sourceId && panel.querySelector(".target"); // 有指定來源就捲到那一則，否則捲面板到頂
-  (target || panel).scrollIntoView({ block: "start", behavior: "smooth" });
+  const target = tab === "source" && sourceId && panel.querySelector(".target");
+  // Only explicit source links navigate within the page; tabs retain the current position.
+  if (target) target.scrollIntoView({ block: "start", behavior: "smooth" });
+  else els.drawer.scrollTo({ top: scrollTop, behavior: "instant" });
 }
 
 function closeDrawer() {
+  rememberTopicExpansion();
   const returnId = activeFriendId;
   els.drawer.classList.remove("open");
   els.drawer.setAttribute("aria-hidden", "true");
@@ -420,6 +467,12 @@ function showToast(message) {
 ["openAddFriend", "emptyAddFriend"].forEach(id => document.querySelector(`#${id}`).addEventListener("click", () => openDialog(els.friendDialog)));
 document.querySelector("#closeDrawer").addEventListener("click", closeDrawer);
 els.drawerBackdrop.addEventListener("click", closeDrawer);
+// Native details toggle events do not bubble; capture handles mouse and keyboard changes.
+els.drawer.addEventListener("toggle", event => {
+  if (event.target.matches("details.topic-item") && event.target.isConnected) rememberTopicExpansion();
+}, true);
+// Flush changes before navigation, even if the native toggle event is still queued.
+window.addEventListener("pagehide", rememberTopicExpansion);
 els.drawer.addEventListener("click", event => {
   const trigger = event.target.closest("[data-add-source]");
   if (trigger) openAddSource(trigger.dataset.addSource);

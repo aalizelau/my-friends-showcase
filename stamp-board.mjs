@@ -94,7 +94,6 @@ export class StampBoard {
     });
     organise.addEventListener("click", () => this.layout("organise"));
     shuffle.addEventListener("click", () => this.layout("shuffle"));
-    controls.querySelector("#closeStampFocus").addEventListener("click", () => this.closeFocus());
     controls.querySelector("#openFocusedFriend").addEventListener("click", () => {
       const id = this.focusedId;
       this.closeFocus(false);

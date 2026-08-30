@@ -100,7 +100,7 @@ function fixture({ reducedMotion = false, lines = {} } = {}) {
   const grid = new Element();
   grid.children = Array.from({ length: 18 }, (_, index) => new Element(String(index + 1)));
   const controls = new Element();
-  controls.controls = { "#closeStampFocus": new Element(), "#openFocusedFriend": new Element() };
+  controls.controls = { "#openFocusedFriend": new Element() };
   const bubble = new Element();
   bubble.offsetHeight = 126;
   bubble.hidden = true;
@@ -146,6 +146,17 @@ test("focused profile action retains the existing friend identifier", () => {
   controls.controls["#openFocusedFriend"].dispatchEvent(new Event("click"));
   assert.equal(openedProfile(), "7");
   assert.equal(controller.focusedId, null);
+});
+
+test("clicking empty board space exits focus and restores the stamp without an exit button", () => {
+  const { controller, board, controls, settle } = fixture();
+  const original = { ...controller.entries.get("1").current };
+  controller.focus("1");
+  board.dispatchEvent(new Event("click"));
+  settle();
+  assert.equal(controller.focusedId, null);
+  assert.deepEqual(controller.entries.get("1").current, original);
+  assert.equal(controls.hidden, true);
 });
 
 test("shuffle changes positions without replacing friends; organise keeps the same elements", () => {

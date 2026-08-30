@@ -83,11 +83,7 @@ export class RingCarousel {
     this.bubbleEl.setAttribute("aria-label", "依手帳想像的語氣，非本人原話");
     this.bubbleText = document.createElement("p");
     this.bubbleText.className = "focus-bubble-text";
-    const caption = document.createElement("span");
-    caption.className = "focus-bubble-caption";
-    caption.textContent = "依手帳想像的語氣 · 非本人原話";
     this.bubbleEl.appendChild(this.bubbleText);
-    this.bubbleEl.appendChild(caption);
     this.mount.appendChild(this.bubbleEl);
 
     const N = this.items.length;

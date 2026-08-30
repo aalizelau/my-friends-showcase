@@ -145,7 +145,8 @@ test('bubbles belong only to the centered friend with notes, including keyboard 
   assert.equal(carousel.bubbleEl.hidden, false);
   assert.equal(carousel.bubbleText.textContent, 'Personality 0');
   assert.equal(carousel.cards[0].el.attributes['aria-describedby'], 'ringFocusBubble');
-  assert.match(carousel.bubbleEl.children[1].textContent, /非本人原話/);
+  assert.equal(carousel.bubbleEl.children.length, 1, 'Only the personality text is visible in the bubble');
+  assert.match(carousel.bubbleEl.attributes['aria-label'], /非本人原話/);
   carousel.turn(1);
   assert.equal(carousel.bubbleEl.hidden, true, 'Unrecorded friends should not receive invented text');
   assert.equal(carousel.cards[0].el.attributes['aria-describedby'], undefined);
@@ -191,7 +192,7 @@ test('speech, portrait and name have separate space on narrow and short stages',
     const { carousel } = fixture({ bubbles: true, width, height });
     const portraitTop = carousel.frontY - carousel.cardH / 2;
     const bubbleBottom = height - parseFloat(carousel.bubbleEl.style.bottom);
-    assert.ok(bubbleBottom >= 224, 'Reserve enough room for handwriting and the disclaimer');
+    assert.ok(bubbleBottom >= 224, 'Reserve enough room for the handwritten bubble');
     assert.ok(portraitTop - bubbleBottom >= 17.99, 'The bubble tail must not cover the avatar');
     assert.ok(parseFloat(carousel.metaEl.style.top) + 64 <= height - 24, 'Keep the centered name in the stage');
     const originalY = carousel.frontY;
