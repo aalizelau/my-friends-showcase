@@ -33,38 +33,20 @@
       </header>
 
       <main id="top">
-        <section class="hero" aria-labelledby="hero-title">
-          <img src="assets/friends-neighborhood.png" alt="朋友們在溫暖的街區市集中相聚、聊天與分享生活" />
-          <div class="hero-scrim"></div>
-          <div class="hero-copy">
-            <p class="eyebrow">YOUR PEOPLE, REMEMBERED</p>
-            <h1 id="hero-title">把關係，<br />放在心上。</h1>
-            <p>記下那些微小卻重要的事，<br />讓下一次見面，從真正的關心開始。</p>
-            <button class="hero-cta" id="heroAddFriend" type="button">記住一位新朋友 <span>→</span></button>
-          </div>
-        </section>
-
         <section class="content-section" id="friends" aria-labelledby="friends-title">
           <div class="section-heading">
             <div>
-              <p class="eyebrow">MY PEOPLE</p>
-              <h2 id="friends-title">我的朋友們</h2>
-              <p class="section-subtitle">每個人，都是一個正在發生的故事。</p>
+              <p class="eyebrow">A LITTLE COLLECTION OF MY PEOPLE</p>
+              <h1 id="friends-title">我的朋友們<span>。</span></h1>
+              <p class="section-subtitle">把每張臉孔，收在心上。</p>
             </div>
-            <div class="view-switch" aria-label="檢視方式">
-              <button class="active" id="gridView" type="button" aria-label="卡片檢視">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="6" height="6"/><rect x="14" y="4" width="6" height="6"/><rect x="4" y="14" width="6" height="6"/><rect x="14" y="14" width="6" height="6"/></svg>
-              </button>
-              <button id="listView" type="button" aria-label="列表檢視">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h12M8 12h12M8 18h12"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/></svg>
-              </button>
-            </div>
+            <p class="collection-note">Some people make<br />the world feel smaller.</p>
           </div>
 
           <div class="workspace">
             <aside class="sidebar">
               <label class="search-box" for="searchInput">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m16 16 4 4"/></svg>
+                <span class="sr-only">搜尋朋友</span>
                 <input id="searchInput" type="search" placeholder="找一位朋友…" autocomplete="off" />
               </label>
 
@@ -82,10 +64,21 @@
 
             <div class="friends-area">
               <div class="result-bar">
-                <p><strong id="resultCount">0</strong> 位朋友</p>
-                <span id="filterHint">依最近互動排序</span>
+                <p><strong id="resultCount">0</strong> 位朋友 <span class="result-divider">/</span> <span id="filterHint">隨心散落</span></p>
+                <div class="board-actions" aria-label="整理朋友郵票">
+                  <button id="organiseStamps" type="button"><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="3" y="3" width="5" height="5" rx=".5"/><rect x="12" y="3" width="5" height="5" rx=".5"/><rect x="3" y="12" width="5" height="5" rx=".5"/><rect x="12" y="12" width="5" height="5" rx=".5"/></svg>Organise</button>
+                  <button id="shuffleStamps" type="button"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 5h2c4 0 6 10 10 10h2m-3-3 3 3-3 3M3 15h2c1.5 0 2.7-1.4 4-3.2M11 8.2C12.3 6.4 13.5 5 15 5h2m-3-3 3 3-3 3"/></svg>Shuffle</button>
+                </div>
               </div>
-              <div class="friends-grid" id="friendsGrid"></div>
+              <div class="stamp-board" id="stampBoard" aria-label="朋友郵票收藏" aria-describedby="boardHelp">
+                <div class="friends-grid" id="friendsGrid"></div>
+                <div class="stamp-focus-controls" id="stampFocusControls" hidden role="group" aria-label="專注模式">
+                  <button class="focus-profile" id="openFocusedFriend" type="button">打開朋友手帳 <span aria-hidden="true">↗</span></button>
+                  <button class="focus-close" id="closeStampFocus" type="button" aria-label="退出專注模式">返回收藏 <kbd>esc</kbd></button>
+                </div>
+              </div>
+              <div class="board-caption" id="boardHelp"><span>拖曳，隨心擺放。點一下，靠近一點。<span class="sr-only">以 Tab 選取朋友，方向鍵移動，Enter 進入專注模式，Escape 返回。</span></span><span aria-hidden="true">A CIRCLE, ALWAYS GROWING.</span></div>
+              <p class="sr-only" id="boardStatus" role="status" aria-live="polite"></p>
               <div class="empty-state" id="emptyState" hidden>
                 <span>◌</span>
                 <h3>還沒有找到這位朋友</h3>
@@ -112,7 +105,7 @@
     </div>
 
     <div class="drawer-backdrop" id="drawerBackdrop" hidden></div>
-    <aside class="friend-drawer" id="friendDrawer" aria-hidden="true" aria-label="朋友詳情">
+    <aside class="friend-drawer" id="friendDrawer" role="dialog" aria-modal="true" aria-hidden="true" aria-label="朋友詳情" inert>
       <button class="drawer-close icon-button" id="closeDrawer" type="button" aria-label="關閉朋友詳情">×</button>
       <div id="drawerContent"></div>
     </aside>
@@ -164,6 +157,6 @@
     </dialog>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <script src="app.js"></script>
+    <script type="module" src="app.js"></script>
   </body>
 </html>

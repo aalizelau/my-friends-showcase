@@ -12,6 +12,14 @@ node server.mjs
 
 然後前往 `http://localhost:4173`。（可用 `PORT=xxxx node server.mjs` 改埠。）
 
+## 朋友收藏板
+
+- 每位朋友的頭像是一張可拖曳的郵票；拖曳放開後有輕微慣性，位置限制在板內。
+- **Organise** 排成置中的行列；**Shuffle** 重新散落位置與角度，不會更換朋友或頭像配對。
+- 點選郵票會置中放大，其他頭像模糊；可開啟原有朋友手帳。點空白處、「返回收藏」或 Escape 退出，回到原位置。
+- 鍵盤：Tab 選取、方向鍵移動（Shift 加大步幅）、Enter／空白鍵專注查看、Escape 返回。
+- 支援窄螢幕及系統「減少動態效果」。郵票位置只保留於本次開啟，不寫入朋友資料。
+
 ## 資料
 
 每位朋友一個 Markdown 檔，存在 `data/friends/<id>.md`，只留在本機、不會上傳。
@@ -37,4 +45,5 @@ node server.mjs
 ```bash
 node scripts/migrate.mjs        # 一次性：JSON → md（初始遷移，資料來源已移除，僅存參考）
 node scripts/verify-roundtrip.mjs  # 測試：serialize(parse(md)) 與原檔逐位元組相同
+node --test scripts/verify-stamp-board.mjs  # 收藏板佈局、互動狀態與無障礙行為測試
 ```

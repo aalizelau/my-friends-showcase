@@ -1,4 +1,5 @@
 // 朋友資料改由後端讀取層提供（data/friends/*.md）；見 server.mjs 與 docs/profile-schema.md
+import { StampBoard } from "./stamp-board.mjs";
 
 const palettes = [
   { skin: "#f29a82", hair: "#292e2b", shirt: "#e75837", bg: "#efe0ca" },
@@ -53,6 +54,7 @@ let activeFilter = "all";
 let activeFriendId = null;
 let activeDetailTab = "now";
 let toastTimer;
+let drawerCloseTimer;
 
 const els = {
   grid: document.querySelector("#friendsGrid"),
@@ -69,6 +71,18 @@ const els = {
   sourceForm: document.querySelector("#sourceForm"),
   toast: document.querySelector("#toast")
 };
+
+const stampBoard = new StampBoard({
+  board: document.querySelector("#stampBoard"),
+  grid: els.grid,
+  controls: document.querySelector("#stampFocusControls"),
+  organise: document.querySelector("#organiseStamps"),
+  shuffle: document.querySelector("#shuffleStamps"),
+  sidebar: document.querySelector(".sidebar"),
+  status: document.querySelector("#boardStatus"),
+  hint: document.querySelector("#filterHint"),
+  onOpenProfile: openDrawer
+});
 
 function escapeHtml(value = "") {
   return String(value).replace(/[&<>'"]/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#039;", '"': "&quot;" })[char]);
@@ -123,7 +137,9 @@ function render() {
   els.resultCount.textContent = friends.length;
   els.empty.hidden = friends.length !== 0;
   els.grid.hidden = friends.length === 0;
+  document.querySelector(".board-caption").hidden = friends.length === 0;
   els.grid.innerHTML = friends.map(friendCard).join("");
+  stampBoard.sync();
 
   const visible = visibleFriends();
   const counts = {
@@ -139,7 +155,7 @@ function render() {
 }
 
 function friendCard(friend) {
-  return `<article class="friend-card" tabindex="0" role="button" data-friend-id="${escapeHtml(friend.id)}" aria-label="查看 ${escapeHtml(friend.name)} 的詳情">
+  return `<article class="friend-card" tabindex="0" role="button" data-friend-id="${escapeHtml(friend.id)}" data-friend-name="${escapeHtml(friend.name)}" aria-label="專注查看 ${escapeHtml(friend.name)}；方向鍵可移動" aria-expanded="false" aria-controls="stampFocusControls">
     <div class="avatar">${avatarMarkup(friend)}</div>
     <h3>${escapeHtml(friend.name)}</h3>
   </article>`;
@@ -154,11 +170,19 @@ function formatDate(value, short = false) {
 function openDrawer(id) {
   const friend = state.friends.find(f => f.id === id);
   if (!friend) return;
+  stampBoard.closeFocus(false);
   activeFriendId = id;
   activeDetailTab = "now";
+  clearTimeout(drawerCloseTimer);
   els.drawerContent.innerHTML = detailShellMarkup(friend);
   els.drawerBackdrop.hidden = false;
-  requestAnimationFrame(() => els.drawer.classList.add("open"));
+  els.drawer.inert = false;
+  document.querySelector(".app-shell").inert = true;
+  requestAnimationFrame(() => {
+    if (activeFriendId !== id) return;
+    els.drawer.classList.add("open");
+    document.querySelector("#closeDrawer").focus({ preventScroll: true });
+  });
   els.drawer.setAttribute("aria-hidden", "false");
   document.body.classList.add("drawer-open");
   if (location.hash !== `#/friend/${id}`) location.hash = `#/friend/${id}`; // 每位朋友各自的 URL
@@ -290,11 +314,16 @@ function switchDetailTab(tab, sourceId = "") {
 }
 
 function closeDrawer() {
+  const returnId = activeFriendId;
   els.drawer.classList.remove("open");
   els.drawer.setAttribute("aria-hidden", "true");
+  els.drawer.inert = true;
+  document.querySelector(".app-shell").inert = false;
   document.body.classList.remove("drawer-open");
-  setTimeout(() => { els.drawerBackdrop.hidden = true; }, 340);
+  clearTimeout(drawerCloseTimer);
+  drawerCloseTimer = setTimeout(() => { els.drawerBackdrop.hidden = true; }, 340);
   activeFriendId = null;
+  (stampBoard.entries.get(returnId)?.element || document.querySelector("#organiseStamps")).focus({ preventScroll: true });
   if (/^#\/friend\//.test(location.hash)) history.replaceState(null, "", location.pathname + location.search); // 清掉網址上的朋友 hash
 }
 
@@ -346,16 +375,6 @@ function showToast(message) {
   toastTimer = setTimeout(() => els.toast.classList.remove("show"), 2600);
 }
 
-els.grid.addEventListener("click", event => {
-  const card = event.target.closest("[data-friend-id]");
-  if (card) openDrawer(card.dataset.friendId);
-});
-els.grid.addEventListener("keydown", event => {
-  if ((event.key === "Enter" || event.key === " ") && event.target.matches("[data-friend-id]")) {
-    event.preventDefault();
-    openDrawer(event.target.dataset.friendId);
-  }
-});
 els.search.addEventListener("input", render);
 els.filterList.addEventListener("click", event => {
   const button = event.target.closest("button[data-filter]");
@@ -365,7 +384,7 @@ els.filterList.addEventListener("click", event => {
   render();
 });
 
-["openAddFriend", "heroAddFriend", "emptyAddFriend"].forEach(id => document.querySelector(`#${id}`).addEventListener("click", () => openDialog(els.friendDialog)));
+["openAddFriend", "emptyAddFriend"].forEach(id => document.querySelector(`#${id}`).addEventListener("click", () => openDialog(els.friendDialog)));
 document.querySelector("#closeDrawer").addEventListener("click", closeDrawer);
 els.drawerBackdrop.addEventListener("click", closeDrawer);
 els.drawer.addEventListener("click", event => {
@@ -419,6 +438,7 @@ els.friendForm.addEventListener("submit", async event => {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const friend = await res.json();
     state.friends.unshift(friend);
+    state.visibleIds?.add(friend.id);
     render();
     closeDialog(els.friendDialog);
     showToast(`已把 ${friend.name} 加進生活圈`);
@@ -458,14 +478,6 @@ els.sourceForm.addEventListener("submit", async event => {
     showToast("儲存失敗，請確認伺服器有在執行");
   }
 });
-
-document.querySelector("#gridView").addEventListener("click", () => setView("grid"));
-document.querySelector("#listView").addEventListener("click", () => setView("list"));
-function setView(view) {
-  els.grid.classList.toggle("list-mode", view === "list");
-  document.querySelector("#gridView").classList.toggle("active", view === "grid");
-  document.querySelector("#listView").classList.toggle("active", view === "list");
-}
 
 document.querySelector("#themeButton").addEventListener("click", () => {
   document.body.classList.toggle("dark");
