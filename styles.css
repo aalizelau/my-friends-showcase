@@ -1,5 +1,12 @@
 /* Bundled locally: no profile text or font requests leave the notebook. */
 @font-face {
+  font-family: "Mountains of Christmas";
+  src: url("assets/fonts/mountains-of-christmas/MountainsofChristmas-Bold.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+}
+@font-face {
   font-family: "Gloria Hallelujah";
   src: url("assets/fonts/gloria-hallelujah/GloriaHallelujah.ttf") format("truetype");
   font-style: normal;
@@ -62,6 +69,13 @@ a { color: inherit; text-decoration: none; }
   backdrop-filter: blur(18px);
 }
 .brand { display: inline-flex; align-items: center; gap: 11px; font-weight: 700; letter-spacing: -0.04em; font-size: 20px; width: fit-content; }
+.brand-wordmark { position: relative; display: inline-grid; padding: 12px 17px 10px 3px; }
+.brand-title { color: var(--ink); font: 700 clamp(27px, 3vw, 34px)/1 "Mountains of Christmas", var(--font); letter-spacing: 0; font-synthesis: none; white-space: nowrap; }
+/* Small, static paper-star accents, with space reserved outside the lettering. */
+.brand-star { position: absolute; display: block; pointer-events: none; clip-path: polygon(49% 0, 62% 34%, 100% 39%, 72% 61%, 80% 100%, 48% 78%, 13% 94%, 24% 57%, 0 32%, 36% 33%); }
+.brand-star-orange { width: 11px; height: 11px; top: 0; left: 66%; background: var(--orange); transform: rotate(12deg); }
+.brand-star-gold { width: 10px; height: 10px; top: 21%; right: 0; background: var(--mustard); transform: rotate(-14deg); }
+.brand-star-green { width: 9px; height: 9px; bottom: 0; left: 25%; background: var(--forest); transform: rotate(21deg); }
 .brand-mark { position: relative; width: 31px; height: 28px; display: inline-block; }
 .brand-mark i { position: absolute; width: 12px; height: 19px; background: var(--orange); border-radius: 60% 60% 45% 45%; transform-origin: 50% 90%; }
 .brand-mark i:nth-child(1) { left: 1px; bottom: 0; transform: rotate(-48deg); }

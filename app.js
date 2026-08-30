@@ -151,6 +151,7 @@ function updateView() {
       mount: document.querySelector("#carouselMode"),
       orientation: "horizontal",
       items: boardFriends().map(friend => ({ id: friend.id, name: friend.name,
+        bubble: focusLineFor(friend)?.text || "",
         markup: avatarMarkup(friend).replace('loading="lazy"', 'loading="eager" draggable="false"') })),
       onOpen: openDrawer
     });
@@ -206,6 +207,7 @@ function openDrawer(id) {
   activeDetailTab = "now";
   clearTimeout(drawerCloseTimer);
   els.drawerContent.innerHTML = detailShellMarkup(friend);
+  els.drawer.scrollTo({ top: 0, behavior: "instant" });
   els.drawerBackdrop.hidden = false;
   els.drawer.inert = false;
   document.querySelector(".app-shell").inert = true;

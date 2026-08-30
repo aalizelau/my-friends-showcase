@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { runInNewContext } from "node:vm";
+import { focusLineFor } from "../focus-lines.mjs";
 
 const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
 const css = await readFile(new URL("../styles.css", import.meta.url), "utf8");
@@ -27,6 +28,12 @@ test("the toolbar shows the friend prompt and Tube retains two non-interactive r
   assert.match(tubeCss, /\.tube-orbit \{ pointer-events: none;/);
 });
 
+test("Ring contains its avatar and bubble layers below the detail drawer", () => {
+  assert.match(carouselCss, /#carouselMode\s*\{[^}]*isolation:\s*isolate/);
+  assert.match(css, /\.drawer-backdrop\s*\{[^}]*z-index:\s*39/);
+  assert.match(css, /\.friend-drawer\s*\{[^}]*z-index:\s*40/);
+});
+
 // Exercise application startup and form submission without a browser or live data writes.
 async function startApplication(friends) {
   class Element {
@@ -49,6 +56,7 @@ async function startApplication(friends) {
     addEventListener(event, callback) { this.events.set(event, callback); }
     setAttribute(name, value) { this.attributes.set(name, value); }
     focus() { this.wasFocused = true; }
+    scrollTo(options) { this.scrollTop = options.top; this.scrollBehavior = options.behavior; }
     showModal() { this.open = true; }
     reset() {}
     close() { this.closed = true; }
@@ -104,7 +112,7 @@ async function startApplication(friends) {
       destroy() { this.destroyed = true; }
     },
     selectBoardFriends: records => records.slice(),
-    focusLineFor: () => null,
+    focusLineFor,
     setTimeout: () => 1,
     clearTimeout() {},
     requestAnimationFrame: callback => callback(),
@@ -207,4 +215,30 @@ test("a friend can be added to an empty collection without choosing a category",
   assert.equal(nodes.get("#tubeWorld").children.length, 1);
   assert.equal(nodes.get("#emptyState").hidden, true);
   assert.equal(nodes.get("#friendDialog").closed, true);
+});
+
+test("Ring uses the same source-backed personality lines as Stamps and profiles open at the top", async () => {
+  const friends = [
+    { id: "1", name: "Recorded friend", profile: { sources: [{ id: "2026-08-26", text: "Existing notes" }] } },
+    { id: "2", name: "Blank friend" }
+  ];
+  const { nodes, rings, stamps, closeProfile } = await startApplication(friends);
+  nodes.get("#ringView").events.get("click")();
+  const ring = rings[0];
+  assert.equal(ring.cards[0].item.bubble, stamps.options.getFocusBubble("1").text);
+  assert.equal(ring.cards[1].item.bubble, "");
+  const drawer = nodes.get("#friendDrawer");
+  drawer.scrollTop = 700;
+  ring.options.onOpen("1");
+  assert.equal(drawer.scrollTop, 0);
+  assert.equal(drawer.scrollBehavior, "instant");
+  assert.equal(nodes.get(".app-shell").inert, true);
+  assert.equal(drawer.inert, false);
+  closeProfile();
+  assert.equal(nodes.get(".app-shell").inert, false);
+  assert.equal(drawer.inert, true);
+  drawer.scrollTop = 400;
+  ring.options.onOpen("2");
+  assert.equal(drawer.scrollTop, 0);
+  assert.match(nodes.get("#drawerContent").innerHTML, /Blank friend/);
 });

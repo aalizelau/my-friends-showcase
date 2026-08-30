@@ -15,6 +15,7 @@ class Element {
   removeEventListener(type, fn) { this.events.get(type)?.delete(fn); }
   emit(type, event = {}) { for (const fn of this.events.get(type) || []) fn(event); }
   setAttribute(key, value) { this.attributes[key] = value; }
+  removeAttribute(key) { delete this.attributes[key]; }
   set innerHTML(value) { this.markup = value; this.metaName = new Element(); }
   get innerHTML() { return this.markup; }
   querySelector(selector) { return selector === '.carousel-meta__name' ? this.metaName : null; }
@@ -27,8 +28,8 @@ class Element {
   releasePointerCapture() { this.capture = null; }
 }
 
-function fixture({ count = 18, reduced = true, width = 1280 } = {}) {
-  const mount = new Element(); mount.clientWidth = width;
+function fixture({ count = 18, reduced = true, width = 1280, height = 680, bubbles = false } = {}) {
+  const mount = new Element(); mount.clientWidth = width; mount.clientHeight = height;
   const document = new Element(); document.hidden = false; document.createElement = () => new Element();
   const window = new Element();
   const motion = new Element(); motion.matches = reduced; window.matchMedia = () => motion;
@@ -40,7 +41,7 @@ function fixture({ count = 18, reduced = true, width = 1280 } = {}) {
   };
   runInNewContext(`${source}\nthis.RingCarousel = RingCarousel;`, sandbox);
   const carousel = new sandbox.RingCarousel({ mount, orientation: 'horizontal',
-    items: Array.from({ length: count }, (_, i) => ({ id: String(i), name: `Friend ${i}`, markup: '<svg aria-label="avatar"></svg>' })),
+    items: Array.from({ length: count }, (_, i) => ({ id: String(i), name: `Friend ${i}`, bubble: bubbles && i !== 1 ? `Personality ${i}` : '', markup: '<svg aria-label="avatar"></svg>' })),
     onOpen: id => { opened = id; }
   });
   const step = () => { clock += 16; const pending = [...frames.values()]; frames.clear(); pending.forEach(fn => fn(clock)); };
@@ -137,4 +138,66 @@ test('normal pointer release retains flick momentum after lost capture', () => {
   assert.equal(carousel.velocity, velocity);
   assert.equal(frames.size, 1);
   carousel.destroy();
+});
+
+test('bubbles belong only to the centered friend with notes, including keyboard navigation', () => {
+  const { carousel, mount, frames } = fixture({ bubbles: true });
+  assert.equal(carousel.bubbleEl.hidden, false);
+  assert.equal(carousel.bubbleText.textContent, 'Personality 0');
+  assert.equal(carousel.cards[0].el.attributes['aria-describedby'], 'ringFocusBubble');
+  assert.match(carousel.bubbleEl.children[1].textContent, /非本人原話/);
+  carousel.turn(1);
+  assert.equal(carousel.bubbleEl.hidden, true, 'Unrecorded friends should not receive invented text');
+  assert.equal(carousel.cards[0].el.attributes['aria-describedby'], undefined);
+  mount.emit('keydown', { key: 'ArrowRight', preventDefault() {} });
+  assert.equal(carousel.bubbleText.textContent, 'Personality 2');
+  assert.equal(carousel.bubbleEl.hidden, false);
+  assert.equal(carousel.cards[2].el.attributes['aria-describedby'], 'ringFocusBubble');
+  carousel.setSuspended(true);
+  assert.equal(carousel.bubbleEl.hidden, true);
+  carousel.setSuspended(false);
+  assert.equal(carousel.bubbleEl.hidden, false);
+  assert.equal(frames.size, 0);
+  carousel.destroy();
+  assert.equal(mount.children.length, 0);
+});
+
+test('bubbles wait until motion settles and hide during dragging or offscreen', () => {
+  const { carousel, settle, document } = fixture({ reduced: false, bubbles: true });
+  assert.equal(carousel.bubbleEl.hidden, true);
+  settle();
+  const slot = (carousel.frontSlot + 2) % carousel.cards.length;
+  carousel.handleCardClick(carousel.cards[slot].el);
+  assert.equal(carousel.bubbleEl.hidden, true);
+  settle();
+  assert.equal(carousel.bubbleEl.hidden, false);
+  assert.equal(carousel.bubbleText.textContent, `Personality ${slot}`);
+  const event = { button: 0, isPrimary: true, pointerId: 1, clientX: 100, clientY: 100, target: carousel.cards[slot].el };
+  carousel.onPointerDown(event);
+  assert.equal(carousel.bubbleEl.hidden, true);
+  carousel.onPointerUp(event);
+  assert.equal(carousel.bubbleEl.hidden, false);
+  document.hidden = true; document.emit('visibilitychange');
+  assert.equal(carousel.bubbleEl.hidden, true);
+  document.hidden = false; document.emit('visibilitychange');
+  assert.equal(carousel.bubbleEl.hidden, false);
+  carousel.observer.notify([{ isIntersecting: false }]);
+  assert.equal(carousel.bubbleEl.hidden, true);
+  carousel.destroy();
+});
+
+test('speech, portrait and name have separate space on narrow and short stages', () => {
+  for (const width of [320, 390, 760, 1280, 1920]) for (const height of [580, 600, 760]) {
+    const { carousel } = fixture({ bubbles: true, width, height });
+    const portraitTop = carousel.frontY - carousel.cardH / 2;
+    const bubbleBottom = height - parseFloat(carousel.bubbleEl.style.bottom);
+    assert.ok(bubbleBottom >= 224, 'Reserve enough room for handwriting and the disclaimer');
+    assert.ok(portraitTop - bubbleBottom >= 17.99, 'The bubble tail must not cover the avatar');
+    assert.ok(parseFloat(carousel.metaEl.style.top) + 64 <= height - 24, 'Keep the centered name in the stage');
+    const originalY = carousel.frontY;
+    carousel.turn(1);
+    carousel.onResize();
+    assert.equal(carousel.frontY, originalY, 'The ring must not jump when a friend has no bubble');
+    carousel.destroy();
+  }
 });

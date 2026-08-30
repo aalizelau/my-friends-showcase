@@ -36,6 +36,8 @@ export class RingCarousel {
     this.downCard = null;
     this.tween = null;      // click-to-centre easing {from,to,start,dur}
     this.frontSlot = -1;
+    this.bubbleSlot = -1;
+    this.hasBubbles = items.some(item => item.bubble);
     this.raf = null;
     this.suspended = false;
     this.destroyed = false;
@@ -72,6 +74,21 @@ export class RingCarousel {
     this.metaEl.className = "carousel-meta";
     this.metaEl.innerHTML = `<h2 class="carousel-meta__name"></h2>`;
     this.mount.appendChild(this.metaEl);
+
+    this.bubbleEl = document.createElement("div");
+    this.bubbleEl.id = "ringFocusBubble";
+    this.bubbleEl.className = "focus-bubble carousel-bubble";
+    this.bubbleEl.hidden = true;
+    this.bubbleEl.setAttribute("role", "note");
+    this.bubbleEl.setAttribute("aria-label", "依手帳想像的語氣，非本人原話");
+    this.bubbleText = document.createElement("p");
+    this.bubbleText.className = "focus-bubble-text";
+    const caption = document.createElement("span");
+    caption.className = "focus-bubble-caption";
+    caption.textContent = "依手帳想像的語氣 · 非本人原話";
+    this.bubbleEl.appendChild(this.bubbleText);
+    this.bubbleEl.appendChild(caption);
+    this.mount.appendChild(this.bubbleEl);
 
     const N = this.items.length;
     this.step = TAU / Math.max(N, 1);
@@ -112,10 +129,14 @@ export class RingCarousel {
       // sit at ~0.30·W from centre — comfortably complete (front + 2 full,
       // with the next pair peeking at the edges), holding through a turn.
       this.cardW = clamp(W * 0.185, Math.min(190, W * .56), 300);
+      // Reserve a stable speech area, even when passing a friend without notes.
+      // Keep the card, name and bubble within the stage on shorter screens.
+      if (this.hasBubbles) this.cardW = Math.min(this.cardW, Math.max(120, H - 358) / 1.18);
       this.cardH = this.cardW * 1.18;
       this.R = Math.max((W * 0.30) / Math.sin(Math.min(this.step, Math.PI / 3)), 720);
       this.frontX = W * 0.5;
       this.frontY = H * 0.46;
+      if (this.hasBubbles) this.frontY = Math.max(this.frontY, 244 + this.cardH / 2);
       this.cx = this.frontX;        // centre directly below the front card
       this.cy = this.frontY + this.R;
     } else {
@@ -149,6 +170,7 @@ export class RingCarousel {
       this.metaEl.style.top = this.cy + "px";
       this.metaEl.style.maxWidth = Math.max(120, this.W - (this.frontX + this.cardW * 0.5) - 60) + "px";
     }
+    this.bubbleEl.style.bottom = (this.H - this.frontY + this.cardH / 2 + 18) + "px";
     this.layout();
   }
 
@@ -182,6 +204,19 @@ export class RingCarousel {
     this.frontSlot = slot;
     const item = this.items[slot];
     this.metaEl.querySelector(".carousel-meta__name").textContent = item.name || "";
+    this.bubbleText.textContent = item.bubble || "";
+  }
+
+  updateBubble() {
+    const centered = this.frontSlot >= 0 && Math.abs(shortAngle(this.rotation + this.frontSlot * this.step)) < .0001;
+    const visible = centered && !!this.items[this.frontSlot]?.bubble && !this.dragging && !this.tween
+      && Math.abs(this.velocity) <= .001 && !this.suspended && !document.hidden && this.inViewport;
+    const slot = visible ? this.frontSlot : -1;
+    if (slot === this.bubbleSlot) return;
+    if (this.bubbleSlot >= 0) this.cards[this.bubbleSlot].el.removeAttribute("aria-describedby");
+    this.bubbleSlot = slot;
+    this.bubbleEl.hidden = !visible;
+    if (visible) this.cards[slot].el.setAttribute("aria-describedby", this.bubbleEl.id);
   }
 
   needsFrame() {
@@ -191,6 +226,7 @@ export class RingCarousel {
   }
 
   syncAnimation() {
+    this.updateBubble();
     if (!this.needsFrame()) {
       if (this.raf !== null) cancelAnimationFrame(this.raf);
       this.raf = null;
@@ -402,5 +438,6 @@ export class RingCarousel {
     this.observer.disconnect();
     if (this.stage.parentNode) this.stage.parentNode.removeChild(this.stage);
     if (this.metaEl.parentNode) this.metaEl.parentNode.removeChild(this.metaEl);
+    if (this.bubbleEl.parentNode) this.bubbleEl.parentNode.removeChild(this.bubbleEl);
   }
 }

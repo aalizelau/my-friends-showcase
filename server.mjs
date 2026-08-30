@@ -20,7 +20,7 @@ const TYPES = {
   ".mjs": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8",
   ".json": "application/json; charset=utf-8", ".png": "image/png",
   ".svg": "image/svg+xml", ".md": "text/markdown; charset=utf-8",
-  ".ttf": "font/ttf"
+  ".ttf": "font/ttf", ".otf": "font/otf"
 };
 
 const sendJSON = (res, code, data) =>

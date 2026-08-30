@@ -9,7 +9,8 @@
       name="description"
       content="一個用來記住朋友的興趣、近況與相處片段的私人關係手帳。"
     />
-    <title>Inner Circle — 朋友手帳</title>
+    <title>My Friends</title>
+    <link rel="preload" href="assets/fonts/mountains-of-christmas/MountainsofChristmas-Bold.ttf" as="font" type="font/ttf" crossorigin />
     <link rel="stylesheet" href="styles.css" />
     <link rel="stylesheet" href="tube.css" />
     <link rel="stylesheet" href="carousel.css" />
@@ -17,9 +18,14 @@
   <body>
     <div class="app-shell">
       <header class="topbar">
-        <a class="brand" href="#top" aria-label="Inner Circle 首頁">
+        <a class="brand" href="#top" aria-label="My Friends 首頁">
           <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
-          <span>inner circle.</span>
+          <span class="brand-wordmark">
+            <span class="brand-title">My Friends</span>
+            <span class="brand-star brand-star-orange" aria-hidden="true"></span>
+            <span class="brand-star brand-star-gold" aria-hidden="true"></span>
+            <span class="brand-star brand-star-green" aria-hidden="true"></span>
+          </span>
         </a>
         <div class="header-actions">
           <button class="primary-button" id="openAddFriend" type="button" aria-label="新增朋友">

@@ -1,14 +1,16 @@
 /* Horizontal arc from viscose-carousel, within the same simple collection. */
-#carouselMode { position: relative; height: clamp(440px, calc(100svh - 165px), 680px); overflow: hidden; touch-action: pan-y pinch-zoom; }
+#carouselMode { position: relative; isolation: isolate; height: clamp(600px, calc(100svh - 165px), 760px); overflow: hidden; touch-action: pan-y pinch-zoom; }
 .carousel-stage { position: absolute; inset: 0; }
 .carousel-card { position: absolute; left: 0; top: 0; margin: 0; padding: 0; border: 0; background: transparent; transform-origin: center; will-change: transform, opacity; cursor: pointer; user-select: none; }
 .carousel-card img, .carousel-card svg { width: 100%; height: 100%; object-fit: contain; display: block; -webkit-user-drag: none; pointer-events: none; filter: drop-shadow(0 22px 30px rgba(24,34,30,.18)); }
-.carousel-meta { position: absolute; transform: translateX(-50%); text-align: center; pointer-events: none; }
+.carousel-meta { position: absolute; z-index: 1001; transform: translateX(-50%); text-align: center; pointer-events: none; }
 .carousel-meta__name { margin: 0; color: var(--ink); font: 400 clamp(24px, 3vw, 38px)/1.6 var(--font-handwritten); font-synthesis: none; overflow-wrap: anywhere; }
+.carousel-bubble { z-index: 1002; }
+.carousel-bubble .focus-bubble-text { max-height: 160px; overflow-y: auto; overscroll-behavior: contain; }
 .ring-controls { display: flex; justify-content: flex-end; gap: 4px; }
 .ring-controls button { width: 34px; height: 34px; padding: 0; border: 1px solid var(--line); border-radius: 50%; color: var(--ink); background: transparent; cursor: pointer; }
 .ring-controls button:hover { background: var(--paper-2); border-color: var(--forest); }
 .ring-controls button:disabled { opacity: .4; cursor: default; }
 @media (max-width: 760px) {
-  #carouselMode { margin: 0 -16px; height: clamp(440px, calc(100svh - 165px), 600px); }
+  #carouselMode { margin: 0 -16px; height: clamp(580px, calc(100svh - 165px), 720px); }
 }

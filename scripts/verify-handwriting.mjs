@@ -61,3 +61,44 @@ test("local fonts cover the current names, bubble Han characters, and English al
     assert.ok(english(character), `English font missing ${character}`);
   }
 });
+
+test("My Friends uses the local Mountains of Christmas bold 700 face only for the header", async () => {
+  const fontPath = "../assets/fonts/mountains-of-christmas/MountainsofChristmas-Bold.ttf";
+  const titleFont = await glyphLookup(fontPath);
+  for (const character of new Set("My Friends")) assert.ok(titleFont(character), `Title font missing ${character}`);
+  const font = await readFile(new URL(fontPath, import.meta.url));
+  let weight;
+  for (let i = 0; i < font.readUInt16BE(4); i++) {
+    const record = 12 + i * 16;
+    if (font.toString("ascii", record, record + 4) === "OS/2") weight = font.readUInt16BE(font.readUInt32BE(record + 8) + 4);
+  }
+  assert.equal(weight, 700, "Use a real bold font file, not a browser-synthesized weight");
+  const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
+  const css = await readFile(new URL("../styles.css", import.meta.url), "utf8");
+  assert.match(html, /<title>My Friends<\/title>/);
+  assert.match(html, /aria-label="My Friends 首頁"/);
+  assert.match(html, /class="brand-title">My Friends<\/span>/);
+  assert.doesNotMatch(html, /Inner Circle|inner circle\./);
+  assert.match(css, /@font-face\s*\{[^}]*font-family: "Mountains of Christmas";[^}]*MountainsofChristmas-Bold\.ttf[^}]*font-weight: 700;/);
+  assert.match(css, /\.brand-title\s*\{[^}]*font: 700[^}]*"Mountains of Christmas"/);
+  assert.match(html, /rel="preload" href="assets\/fonts\/mountains-of-christmas\/MountainsofChristmas-Bold\.ttf"/);
+  assert.doesNotMatch(html + css, /Melted Ideas|melted-ideas/);
+  assert.match(css, /--font-handwritten: "Gloria Hallelujah", "LXGW WenKai TC"/);
+});
+
+test("the ink title keeps the logo and three static stars in its original vivid colours", async () => {
+  const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
+  const css = await readFile(new URL("../styles.css", import.meta.url), "utf8");
+  assert.equal((html.match(/class="brand-star brand-star-(?:orange|gold|green)" aria-hidden="true"/g) || []).length, 3);
+  assert.match(html, /class="brand-mark" aria-hidden="true"><i><\/i><i><\/i><i><\/i><\/span>/);
+  assert.doesNotMatch(html + css, /brand-star-(?:one|two|three|four|five|six|coral|sage)\b/);
+  assert.match(html, /class="brand-wordmark">\s*<span class="brand-title">My Friends<\/span>/);
+  assert.match(css, /\.brand-title\s*\{[^}]*color: var\(--ink\)/);
+  assert.match(css, /\.brand-star\s*\{[^}]*pointer-events: none;/);
+  const starRules = css.match(/\.brand-star[^}]*\}/g).join("\n");
+  assert.doesNotMatch(starRules, /animation:|transition:/);
+  for (const colour of ["orange", "mustard", "forest"]) {
+    assert.equal(starRules.split(`background: var(--${colour});`).length - 1, 1);
+  }
+  assert.match(css, /\.brand-wordmark\s*\{[^}]*padding: 12px 17px 10px 3px;/);
+});
