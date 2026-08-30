@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f6f0e6" />
+    <meta
+      name="description"
+      content="一個用來記住朋友的興趣、近況與相處片段的私人關係手帳。"
+    />
+    <title>Inner Circle — 朋友手帳</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <a class="brand" href="#top" aria-label="Inner Circle 首頁">
+          <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+          <span>inner circle.</span>
+        </a>
+        <nav class="nav-links" aria-label="主要導覽">
+          <a class="active" href="#friends">朋友</a>
+          <a href="#about">關於</a>
+        </nav>
+        <div class="header-actions">
+          <button class="icon-button" id="themeButton" type="button" aria-label="切換深色模式">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v2m0 14v2M4.2 4.2l1.4 1.4m12.8 12.8 1.4 1.4M3 12h2m14 0h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/><circle cx="12" cy="12" r="4"/></svg>
+          </button>
+          <button class="primary-button" id="openAddFriend" type="button">
+            <span>＋</span> 新朋友
+          </button>
+        </div>
+      </header>
+
+      <main id="top">
+        <section class="hero" aria-labelledby="hero-title">
+          <img src="assets/friends-neighborhood.png" alt="朋友們在溫暖的街區市集中相聚、聊天與分享生活" />
+          <div class="hero-scrim"></div>
+          <div class="hero-copy">
+            <p class="eyebrow">YOUR PEOPLE, REMEMBERED</p>
+            <h1 id="hero-title">把關係，<br />放在心上。</h1>
+            <p>記下那些微小卻重要的事，<br />讓下一次見面，從真正的關心開始。</p>
+            <button class="hero-cta" id="heroAddFriend" type="button">記住一位新朋友 <span>→</span></button>
+          </div>
+        </section>
+
+        <section class="content-section" id="friends" aria-labelledby="friends-title">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">MY PEOPLE</p>
+              <h2 id="friends-title">我的朋友們</h2>
+              <p class="section-subtitle">每個人，都是一個正在發生的故事。</p>
+            </div>
+            <div class="view-switch" aria-label="檢視方式">
+              <button class="active" id="gridView" type="button" aria-label="卡片檢視">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="6" height="6"/><rect x="14" y="4" width="6" height="6"/><rect x="4" y="14" width="6" height="6"/><rect x="14" y="14" width="6" height="6"/></svg>
+              </button>
+              <button id="listView" type="button" aria-label="列表檢視">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h12M8 12h12M8 18h12"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="workspace">
+            <aside class="sidebar">
+              <label class="search-box" for="searchInput">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m16 16 4 4"/></svg>
+                <input id="searchInput" type="search" placeholder="找一位朋友…" autocomplete="off" />
+              </label>
+
+              <div class="filter-block">
+                <span class="filter-label">關係</span>
+                <div class="filter-list" id="filterList">
+                  <button class="active" type="button" data-filter="all"><span>全部</span><b id="countAll">0</b></button>
+                  <button type="button" data-filter="close"><span>親近好友</span><b id="countClose">0</b></button>
+                  <button type="button" data-filter="work"><span>工作夥伴</span><b id="countWork">0</b></button>
+                  <button type="button" data-filter="community"><span>生活圈</span><b id="countCommunity">0</b></button>
+                </div>
+              </div>
+
+            </aside>
+
+            <div class="friends-area">
+              <div class="result-bar">
+                <p><strong id="resultCount">0</strong> 位朋友</p>
+                <span id="filterHint">依最近互動排序</span>
+              </div>
+              <div class="friends-grid" id="friendsGrid"></div>
+              <div class="empty-state" id="emptyState" hidden>
+                <span>◌</span>
+                <h3>還沒有找到這位朋友</h3>
+                <p>試試別的關鍵字，或把他加進你的生活圈。</p>
+                <button class="secondary-button" id="emptyAddFriend" type="button">新增朋友</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+
+        <section class="about-section" id="about">
+          <span class="about-symbol" aria-hidden="true">✦</span>
+          <p>“我們記得的細節，<br />會成為別人被好好看見的證明。”</p>
+          <span class="about-caption">— Inner Circle</span>
+        </section>
+      </main>
+
+      <footer>
+        <a class="brand footer-brand" href="#top"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span><span>inner circle.</span></a>
+        <p>一個安靜、私人的朋友手帳。資料只留在這台裝置。</p>
+        <span>Made with care · 2026</span>
+      </footer>
+    </div>
+
+    <div class="drawer-backdrop" id="drawerBackdrop" hidden></div>
+    <aside class="friend-drawer" id="friendDrawer" aria-hidden="true" aria-label="朋友詳情">
+      <button class="drawer-close icon-button" id="closeDrawer" type="button" aria-label="關閉朋友詳情">×</button>
+      <div id="drawerContent"></div>
+    </aside>
+
+    <dialog class="app-dialog" id="friendDialog">
+      <form id="friendForm">
+        <div class="dialog-header">
+          <div>
+            <p class="eyebrow">NEW PERSON</p>
+            <h2>記住一位新朋友</h2>
+          </div>
+          <button class="icon-button dialog-close" type="button" data-close-dialog="friendDialog" aria-label="關閉">×</button>
+        </div>
+        <div class="form-grid">
+          <label><span>名字 *</span><input name="name" required placeholder="例如：林小雨" /></label>
+          <label><span>暱稱</span><input name="nickname" placeholder="你怎麼稱呼他？" /></label>
+          <label><span>關係</span><select name="relation"><option value="close">親近好友</option><option value="work">工作夥伴</option><option value="community">生活圈</option></select></label>
+          <label><span>生日</span><input name="birthday" type="date" /></label>
+        </div>
+        <div class="dialog-actions">
+          <button class="text-button" type="button" data-close-dialog="friendDialog">取消</button>
+          <button class="primary-button" type="submit">加入我的生活圈</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog class="app-dialog interaction-dialog" id="sourceDialog">
+      <form id="sourceForm">
+        <input type="hidden" name="friendId" />
+        <input type="hidden" name="sourceId" />
+        <div class="dialog-header">
+          <div>
+            <p class="eyebrow" id="sourceEyebrow">EDIT SOURCE</p>
+            <h2 id="sourceTitle">編輯原始記錄</h2>
+            <p class="dialog-subtitle" id="sourceDialogSub"></p>
+          </div>
+          <button class="icon-button dialog-close" type="button" data-close-dialog="sourceDialog" aria-label="關閉">×</button>
+        </div>
+        <div class="form-grid">
+          <label><span>日期</span><input name="date" placeholder="例如：2026.08.25 或 ARCHIVE" /></label>
+          <label><span>標題</span><input name="label" placeholder="這則記錄的標題" /></label>
+          <label class="full"><span>原文 *</span><textarea name="text" rows="14" required placeholder="原始筆記的內容…"></textarea></label>
+        </div>
+        <div class="dialog-actions">
+          <button class="text-button" type="button" data-close-dialog="sourceDialog">取消</button>
+          <button class="primary-button" type="submit">儲存原文</button>
+        </div>
+      </form>
+    </dialog>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script src="app.js"></script>
+  </body>
+</html>
