@@ -53,20 +53,22 @@ export function shuffledPositions(count, metrics, random = Math.random) {
   }, metrics));
 }
 
-export function focusGeometry(metrics, visibleTop = 0, visibleBottom = metrics.height) {
+export function focusGeometry(metrics, visibleTop = 0, visibleBottom = metrics.height, bubbleHeight = 0) {
   const scale = Math.min(1.5, (metrics.width - 40) / metrics.itemWidth);
+  const bubbleSpace = bubbleHeight ? bubbleHeight + 20 : 0;
   const centerX = metrics.width / 2;
-  const centerY = clamp((visibleTop + visibleBottom - 96) / 2,
-    metrics.itemHeight * scale / 2 + 12, metrics.height - metrics.itemHeight * scale / 2 - 96);
+  const centerY = clamp((visibleTop + visibleBottom - 96 + bubbleSpace) / 2,
+    metrics.itemHeight * scale / 2 + 12 + bubbleSpace, metrics.height - metrics.itemHeight * scale / 2 - 96);
   return {
     position: { x: centerX - metrics.itemWidth / 2, y: centerY - metrics.itemHeight / 2, angle: 0, scale },
+    bubbleTop: centerY - metrics.itemHeight * scale / 2 - bubbleSpace,
     controlsTop: centerY + metrics.itemHeight * scale / 2 + 16
   };
 }
 
 export class StampBoard {
-  constructor({ board, grid, controls, organise, shuffle, sidebar, status, hint, onOpenProfile }) {
-    Object.assign(this, { board, grid, controls, organise, shuffle, sidebar, status, hint, onOpenProfile });
+  constructor({ board, grid, controls, bubble, getFocusBubble, organise, shuffle, sidebar, status, hint, onOpenProfile }) {
+    Object.assign(this, { board, grid, controls, bubble, getFocusBubble, organise, shuffle, sidebar, status, hint, onOpenProfile });
     this.entries = new Map();
     this.mode = "shuffle";
     this.focusedId = null;
@@ -87,7 +89,7 @@ export class StampBoard {
     });
     grid.addEventListener("keydown", event => this.keyDown(event));
     board.addEventListener("click", event => {
-      if (!event.target.closest("[data-friend-id], .stamp-focus-controls")) this.closeFocus();
+      if (!event.target.closest("[data-friend-id], .stamp-focus-controls, .focus-bubble")) this.closeFocus();
     });
     organise.addEventListener("click", () => this.layout("organise"));
     shuffle.addEventListener("click", () => this.layout("shuffle"));
@@ -207,15 +209,22 @@ export class StampBoard {
       }
     }
     this.controls.hidden = false;
+    const line = this.getFocusBubble?.(id);
+    if (this.bubble) {
+      this.bubble.querySelector(".focus-bubble-text").textContent = line?.text || "";
+      this.bubble.hidden = !line;
+      if (line) entry.element.setAttribute("aria-describedby", "stampFocusBubble");
+    }
     const rect = this.board.getBoundingClientRect();
     const availableHeight = Math.min(rect.bottom, window.innerHeight) - Math.max(rect.top, 80);
-    if (availableHeight < this.metrics.itemHeight * 1.5 + 130) {
+    const bubbleSpace = this.bubble && !this.bubble.hidden ? this.bubble.offsetHeight + 20 : 0;
+    if (availableHeight < this.metrics.itemHeight * 1.5 + 130 + bubbleSpace) {
       // Bring the board into view before centering on short viewports.
       window.scrollTo({ top: window.scrollY + rect.top - 88, behavior: "instant" });
     }
     this.positionFocus();
     this.controls.querySelector("#openFocusedFriend").focus({ preventScroll: true });
-    this.status.textContent = `正在專注查看 ${entry.element.dataset.friendName}。按 Escape 返回收藏。`;
+    this.status.textContent = `正在專注查看 ${entry.element.dataset.friendName}。${line ? `依手帳想像的語氣，非本人原話：${line.text} ` : ""}按 Escape 返回收藏。`;
     this.start();
   }
 
@@ -225,10 +234,12 @@ export class StampBoard {
     const rect = this.board.getBoundingClientRect();
     const visibleTop = Math.max(0, 80 - rect.top);
     const visibleBottom = Math.min(this.metrics.height, window.innerHeight - rect.top - 12);
-    const geometry = focusGeometry(this.metrics, visibleTop, visibleBottom);
+    const bubbleHeight = this.bubble && !this.bubble.hidden ? this.bubble.offsetHeight : 0;
+    const geometry = focusGeometry(this.metrics, visibleTop, visibleBottom, bubbleHeight);
     entry.goal = geometry.position;
     entry.startAt = 0;
     this.controls.style.top = `${geometry.controlsTop}px`;
+    if (this.bubble) this.bubble.style.top = `${geometry.bubbleTop}px`;
   }
 
   closeFocus(restoreFocus = true) {
@@ -240,6 +251,10 @@ export class StampBoard {
     this.sidebar.inert = false;
     this.organise.disabled = this.shuffle.disabled = false;
     this.controls.hidden = true;
+    if (this.bubble) {
+      this.bubble.hidden = true;
+      this.bubble.querySelector(".focus-bubble-text").textContent = "";
+    }
     for (const other of this.entries.values()) {
       other.element.inert = false;
       other.element.removeAttribute("aria-hidden");
@@ -248,6 +263,7 @@ export class StampBoard {
       entry.goal = copy(entry.home);
       entry.element.classList.remove("is-focused");
       entry.element.setAttribute("aria-expanded", "false");
+      entry.element.removeAttribute("aria-describedby");
       entry.element.style.zIndex = String(++this.layer);
       if (restoreFocus) entry.element.focus({ preventScroll: true });
     }

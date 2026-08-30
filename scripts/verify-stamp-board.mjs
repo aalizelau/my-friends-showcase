@@ -1,6 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { boardMetrics, constrainPosition, organisedPositions, shuffledPositions, focusGeometry, StampBoard } from "../stamp-board.mjs";
+import { FOCUS_LINES, focusLineFor, hasProfileNotes, selectBoardFriends } from "../focus-lines.mjs";
+import { loadFriends } from "../server/profiles.mjs";
+import { fileURLToPath } from "node:url";
 
 function seededRandom(seed = 42) {
   return () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 2 ** 32; };
@@ -83,7 +86,7 @@ class Element extends EventTarget {
   releasePointerCapture() { this.pointerId = null; }
 }
 
-function fixture({ reducedMotion = false } = {}) {
+function fixture({ reducedMotion = false, lines = {} } = {}) {
   const preference = new EventTarget();
   preference.matches = reducedMotion;
   globalThis.window = { matchMedia: () => preference, innerHeight: 900, scrollY: 0, scrollTo() {} };
@@ -95,7 +98,11 @@ function fixture({ reducedMotion = false } = {}) {
   grid.children = Array.from({ length: 18 }, (_, index) => new Element(String(index + 1)));
   const controls = new Element();
   controls.controls = { "#closeStampFocus": new Element(), "#openFocusedFriend": new Element() };
-  const options = { board, grid, controls, organise: new Element(), shuffle: new Element(), sidebar: new Element(), status: new Element(), hint: new Element() };
+  const bubble = new Element();
+  bubble.offsetHeight = 126;
+  bubble.hidden = true;
+  bubble.controls = { ".focus-bubble-text": new Element() };
+  const options = { board, grid, controls, bubble, getFocusBubble: id => lines[id], organise: new Element(), shuffle: new Element(), sidebar: new Element(), status: new Element(), hint: new Element() };
   let openedProfile;
   const controller = new StampBoard({ ...options, onOpenProfile: id => { openedProfile = id; } });
   controller.sync();
@@ -209,4 +216,68 @@ test("reduced motion applies final transforms immediately", () => {
   controller.focus("3");
   controller.tick(performance.now() + 16);
   assert.equal(controller.entries.get("3").current.scale, 1.5);
+});
+
+test("speech bubbles use only authored lines with existing source notes", async () => {
+  const friends = await loadFriends(fileURLToPath(new URL("../data/friends", import.meta.url)));
+  const original = JSON.stringify(friends);
+  for (const [id, line] of Object.entries(FOCUS_LINES)) {
+    const friend = friends.find(friend => friend.id === id);
+    assert.ok(friend, `Missing profile ${id}`);
+    assert.equal(focusLineFor(friend), line, `Missing source evidence for ${friend.name}`);
+    assert.ok(line.text.length < 100);
+    assert.ok(line.inspiration && line.sources.length);
+  }
+  assert.equal(focusLineFor(friends.find(friend => friend.id === "9")), null, "Blank Roy must not inherit recorded Roy's line");
+  assert.ok(focusLineFor(friends.find(friend => friend.id === "22")));
+  assert.equal(focusLineFor({ id: "1", profile: { sources: [] } }), null);
+  assert.equal(focusLineFor({ id: "1", profile: { sources: [{ id: "2026-08-26", text: " " }] } }), null);
+  assert.equal(focusLineFor({ id: "unknown", profile: { sources: [{ id: "archive", text: "New note" }] } }), null);
+  assert.equal(JSON.stringify(friends), original);
+});
+
+test("recorded profiles stay in the initial selection without changing the input or avatar capacity", async () => {
+  const friends = await loadFriends(fileURLToPath(new URL("../data/friends", import.meta.url)));
+  const originalIds = friends.map(friend => friend.id);
+  for (let seed = 1; seed <= 20; seed++) {
+    const selected = selectBoardFriends(friends, 18, seededRandom(seed));
+    assert.equal(selected.length, 18);
+    assert.equal(new Set(selected.map(friend => friend.id)).size, 18);
+    for (const friend of friends.filter(hasProfileNotes)) assert.ok(selected.includes(friend));
+  }
+  assert.deepEqual(friends.map(friend => friend.id), originalIds);
+});
+
+test("bubble appears on focus, survives resize, and clears before a blank profile opens", () => {
+  const line = { text: "A profile-inspired line, not a quotation." };
+  const { controller, bubble, board, status } = fixture({ lines: { "1": line } });
+  controller.focus("1");
+  assert.equal(bubble.hidden, false);
+  assert.equal(bubble.controls[".focus-bubble-text"].textContent, line.text);
+  assert.equal(controller.entries.get("1").element.attributes.get("aria-describedby"), "stampFocusBubble");
+  assert.ok(status.textContent.includes("非本人原話"));
+  board.clientWidth = 343;
+  controller.resize();
+  assert.ok(parseFloat(bubble.style.top) >= 0);
+  assert.equal(bubble.hidden, false);
+  controller.closeFocus();
+  assert.equal(bubble.hidden, true);
+  assert.equal(bubble.controls[".focus-bubble-text"].textContent, "");
+  assert.equal(controller.entries.get("1").element.attributes.has("aria-describedby"), false);
+  controller.focus("2");
+  assert.equal(bubble.hidden, true);
+  assert.equal(bubble.controls[".focus-bubble-text"].textContent, "");
+});
+
+test("focus reserves separate space for bubble, avatar and controls on narrow and short viewports", () => {
+  for (const width of [288, 343, 720, 1150]) {
+    for (const bubbleHeight of [100, 126, 160]) {
+      const metrics = boardMetrics(width, 18);
+      const geometry = focusGeometry(metrics, 0, 320, bubbleHeight);
+      const avatarTop = geometry.position.y + metrics.itemHeight / 2 - metrics.itemHeight * geometry.position.scale / 2;
+      assert.ok(geometry.bubbleTop >= 0);
+      assert.ok(geometry.bubbleTop + bubbleHeight + 19.99 <= avatarTop);
+      assert.ok(geometry.controlsTop + 80 <= metrics.height);
+    }
+  }
 });

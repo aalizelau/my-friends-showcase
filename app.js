@@ -1,5 +1,6 @@
 // 朋友資料改由後端讀取層提供（data/friends/*.md）；見 server.mjs 與 docs/profile-schema.md
 import { StampBoard } from "./stamp-board.mjs";
+import { focusLineFor, selectBoardFriends } from "./focus-lines.mjs";
 
 const palettes = [
   { skin: "#f29a82", hair: "#292e2b", shirt: "#e75837", bg: "#efe0ca" },
@@ -14,7 +15,7 @@ const palettes = [
 
 let state = { friends: [], visibleIds: null, faceOf: {} };
 
-// 重新設計：隨機抽人顯示、其餘暫時隱藏；頭像換成手繪臉孔切片（透明背景、無底色）。
+// 優先展示有手帳資料的朋友；剩餘位置隨機抽人，保留手繪臉孔切片。
 // 每組臉孔包 9 張；依序把每一組分配給不同的人，一組用完換下一組。
 const FACE_PACKS = [
   Array.from({ length: 9 }, (_, i) => `assets/faces/face-${i + 1}.png`),
@@ -22,11 +23,7 @@ const FACE_PACKS = [
 ];
 
 function assignFaces() {
-  const shuffled = [...state.friends];
-  for (let i = shuffled.length - 1; i > 0; i--) { // Fisher–Yates 洗牌
-    const j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-  }
+  const shuffled = selectBoardFriends(state.friends, FACE_PACKS.flat().length);
   state.visibleIds = new Set();
   state.faceOf = {};
   let cursor = 0;
@@ -76,6 +73,8 @@ const stampBoard = new StampBoard({
   board: document.querySelector("#stampBoard"),
   grid: els.grid,
   controls: document.querySelector("#stampFocusControls"),
+  bubble: document.querySelector("#stampFocusBubble"),
+  getFocusBubble: id => focusLineFor(state.friends.find(friend => friend.id === id)),
   organise: document.querySelector("#organiseStamps"),
   shuffle: document.querySelector("#shuffleStamps"),
   sidebar: document.querySelector(".sidebar"),
@@ -510,7 +509,7 @@ async function init() {
     const res = await fetch("/api/friends");
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     state.friends = await res.json();
-    assignFaces(); // 隨機抽人 + 分配臉孔切片（兩組共 18 位）
+    assignFaces(); // 優先有記錄的朋友 + 分配臉孔切片（兩組共 18 位）
   } catch (err) {
     console.error("讀取朋友資料失敗", err);
     showToast("讀取資料失敗，請確認伺服器有在執行（node server.mjs）");
