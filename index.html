@@ -10,6 +10,7 @@
     />
     <title>Inner Circle — 朋友手帳</title>
     <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="tube.css" />
   </head>
   <body>
     <div class="app-shell">
@@ -33,29 +34,30 @@
       </header>
 
       <main id="top">
-        <section class="hero" aria-labelledby="hero-title">
-          <img src="assets/friends-neighborhood.png" alt="朋友們在溫暖的街區市集中相聚、聊天與分享生活" />
-          <div class="hero-scrim"></div>
-          <div class="hero-copy">
+        <section class="circle-intro" aria-labelledby="hero-title">
+          <div>
             <p class="eyebrow">YOUR PEOPLE, REMEMBERED</p>
-            <h1 id="hero-title">把關係，<br />放在心上。</h1>
-            <p>記下那些微小卻重要的事，<br />讓下一次見面，從真正的關心開始。</p>
-            <button class="hero-cta" id="heroAddFriend" type="button">記住一位新朋友 <span>→</span></button>
+            <h1 id="hero-title">把關係，<span>放在心上。</span><svg class="intro-flower" viewBox="0 0 64 64" aria-hidden="true"><path d="M32 7c14-16 24 6 13 15 20-5 24 20 6 23 14 15-7 28-18 12-4 21-28 14-22-5-20 7-25-18-6-23C-9 14 12 1 23 17 22 9 25 5 32 7Z" fill="currentColor"/><circle cx="29" cy="33" r="8" fill="var(--paper)"/></svg></h1>
+          </div>
+          <div class="intro-note">
+            <p>每個人，都是一個正在發生的故事。<br />記下小事，讓關心慢慢長成日常。</p>
+            <button class="text-button" id="heroAddFriend" type="button">記住一位新朋友 <span aria-hidden="true">↗</span></button>
           </div>
         </section>
 
-        <section class="content-section" id="friends" aria-labelledby="friends-title">
+        <section class="content-section circle-section" id="friends" aria-labelledby="friends-title">
           <div class="section-heading">
             <div>
-              <p class="eyebrow">MY PEOPLE</p>
-              <h2 id="friends-title">我的朋友們</h2>
-              <p class="section-subtitle">每個人，都是一個正在發生的故事。</p>
+              <h2 id="friends-title">我的朋友們 <span>MY INNER CIRCLE</span></h2>
             </div>
             <div class="view-switch" aria-label="檢視方式">
-              <button class="active" id="gridView" type="button" aria-label="卡片檢視">
+              <button class="active" id="tubeView" type="button" aria-label="環繞檢視" aria-pressed="true" title="環繞檢視">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg>
+              </button>
+              <button id="gridView" type="button" aria-label="卡片檢視" aria-pressed="false" title="卡片檢視">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="6" height="6"/><rect x="14" y="4" width="6" height="6"/><rect x="4" y="14" width="6" height="6"/><rect x="14" y="14" width="6" height="6"/></svg>
               </button>
-              <button id="listView" type="button" aria-label="列表檢視">
+              <button id="listView" type="button" aria-label="列表檢視" aria-pressed="false" title="列表檢視">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h12M8 12h12M8 18h12"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/></svg>
               </button>
             </div>
@@ -65,16 +67,16 @@
             <aside class="sidebar">
               <label class="search-box" for="searchInput">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m16 16 4 4"/></svg>
-                <input id="searchInput" type="search" placeholder="找一位朋友…" autocomplete="off" />
+                <input id="searchInput" type="search" aria-label="找一位朋友" placeholder="找一位朋友…" autocomplete="off" />
               </label>
 
               <div class="filter-block">
                 <span class="filter-label">關係</span>
                 <div class="filter-list" id="filterList">
-                  <button class="active" type="button" data-filter="all"><span>全部</span><b id="countAll">0</b></button>
-                  <button type="button" data-filter="close"><span>親近好友</span><b id="countClose">0</b></button>
-                  <button type="button" data-filter="work"><span>工作夥伴</span><b id="countWork">0</b></button>
-                  <button type="button" data-filter="community"><span>生活圈</span><b id="countCommunity">0</b></button>
+                  <button class="active" type="button" data-filter="all" aria-pressed="true"><span>全部</span><b id="countAll">0</b></button>
+                  <button type="button" data-filter="close" aria-pressed="false"><span>親近好友</span><b id="countClose">0</b></button>
+                  <button type="button" data-filter="work" aria-pressed="false"><span>工作夥伴</span><b id="countWork">0</b></button>
+                  <button type="button" data-filter="community" aria-pressed="false"><span>生活圈</span><b id="countCommunity">0</b></button>
                 </div>
               </div>
 
@@ -82,10 +84,26 @@
 
             <div class="friends-area">
               <div class="result-bar">
-                <p><strong id="resultCount">0</strong> 位朋友</p>
-                <span id="filterHint">依最近互動排序</span>
+                <p aria-live="polite"><strong id="resultCount">0</strong> 位朋友，在你的生活裡</p>
+                <span id="filterHint">轉一圈，遇見熟悉的臉孔</span>
               </div>
-              <div class="friends-grid" id="friendsGrid"></div>
+              <div class="tube-gallery" id="tubeGallery" hidden>
+                <div class="tube-stage" id="tubeStage" role="region" aria-label="朋友環繞相簿" aria-describedby="tubeHint">
+                  <div class="tube-orbit tube-orbit-top" aria-hidden="true"></div>
+                  <div class="tube-orbit tube-orbit-bottom" aria-hidden="true"></div>
+                  <div class="tube-center" aria-hidden="true"><span class="brand-mark"><i></i><i></i><i></i></span><span>很高興，<br />生活裡有你。</span><small>A LITTLE CLOSER, EVERY DAY</small></div>
+                  <div class="tube-world" id="tubeWorld"></div>
+                </div>
+                <div class="tube-footer">
+                  <p id="tubeHint"><span aria-hidden="true">↔</span> 左右拖曳轉一圈 · 點選朋友，看看近況</p>
+                  <div class="tube-controls" aria-label="環繞相簿控制">
+                    <button type="button" id="tubePrevious" aria-label="向左轉動相簿" title="向左轉動">←</button>
+                    <button type="button" id="tubePause" aria-pressed="false" aria-label="暫停自動旋轉"><span id="tubePauseIcon" aria-hidden="true">Ⅱ</span><span id="tubePauseLabel">暫停</span></button>
+                    <button type="button" id="tubeNext" aria-label="向右轉動相簿" title="向右轉動">→</button>
+                  </div>
+                </div>
+              </div>
+              <div class="friends-grid" id="friendsGrid" hidden></div>
               <div class="empty-state" id="emptyState" hidden>
                 <span>◌</span>
                 <h3>還沒有找到這位朋友</h3>
@@ -112,7 +130,7 @@
     </div>
 
     <div class="drawer-backdrop" id="drawerBackdrop" hidden></div>
-    <aside class="friend-drawer" id="friendDrawer" aria-hidden="true" aria-label="朋友詳情">
+    <aside class="friend-drawer" id="friendDrawer" aria-hidden="true" aria-label="朋友詳情" inert>
       <button class="drawer-close icon-button" id="closeDrawer" type="button" aria-label="關閉朋友詳情">×</button>
       <div id="drawerContent"></div>
     </aside>
@@ -164,6 +182,7 @@
     </dialog>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script src="tube.js"></script>
     <script src="app.js"></script>
   </body>
 </html>

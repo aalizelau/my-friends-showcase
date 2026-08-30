@@ -12,6 +12,12 @@ node server.mjs
 
 然後前往 `http://localhost:4173`。（可用 `PORT=xxxx node server.mjs` 改埠。）
 
+## 環繞相簿
+
+首頁預設用立體圓筒展示朋友：左右拖曳、捲動或使用箭頭轉動，點選頭像開啟原本的朋友詳情。可暫停自動旋轉，並保留卡片／列表檢視、搜尋和關係篩選。系統設定減少動態效果時，預設不自動旋轉。朋友和頭像沿用原分支的隨機分配；新增的朋友也會立即加入可見名單。
+
+視覺參考 [Matis Dene 的 helmet / ImageTube](https://github.com/matdn/helmet)（原專案標示 MIT），以 CSS 3D 和原生 JavaScript 改寫圓筒排列與慣性，不新增 React、Three.js 或外部 CDN。暖紙色、粉彩相片卡及手繪頭像沿用 Inner Circle 的設計。原始參考、獨立幾何基準與驗證記錄保存在 `docs/tube-reference/`。
+
 ## 資料
 
 每位朋友一個 Markdown 檔，存在 `data/friends/<id>.md`，只留在本機、不會上傳。
@@ -37,4 +43,5 @@ node server.mjs
 ```bash
 node scripts/migrate.mjs        # 一次性：JSON → md（初始遷移，資料來源已移除，僅存參考）
 node scripts/verify-roundtrip.mjs  # 測試：serialize(parse(md)) 與原檔逐位元組相同
+node scripts/verify-tube.mjs       # 測試：動畫生命週期、減少動態、拖曳與單一／空結果
 ```

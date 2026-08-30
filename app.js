@@ -53,6 +53,8 @@ let activeFilter = "all";
 let activeFriendId = null;
 let activeDetailTab = "now";
 let toastTimer;
+let activeView = "tube";
+let drawerReturnFocus = null;
 
 const els = {
   grid: document.querySelector("#friendsGrid"),
@@ -69,6 +71,14 @@ const els = {
   sourceForm: document.querySelector("#sourceForm"),
   toast: document.querySelector("#toast")
 };
+
+const tube = new FriendTube({
+  stage: document.querySelector("#tubeStage"),
+  world: document.querySelector("#tubeWorld"),
+  gallery: document.querySelector("#tubeGallery"),
+  cardMarkup: tubeCard,
+  onOpen: openDrawer
+});
 
 function escapeHtml(value = "") {
   return String(value).replace(/[&<>'"]/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#039;", '"': "&quot;" })[char]);
@@ -122,8 +132,10 @@ function render() {
   const friends = filteredFriends();
   els.resultCount.textContent = friends.length;
   els.empty.hidden = friends.length !== 0;
-  els.grid.hidden = friends.length === 0;
+  els.grid.hidden = friends.length === 0 || activeView === "tube";
   els.grid.innerHTML = friends.map(friendCard).join("");
+  tube.setFriends(friends);
+  tube.setEnabled(activeView === "tube" && friends.length > 0);
 
   const visible = visibleFriends();
   const counts = {
@@ -145,6 +157,15 @@ function friendCard(friend) {
   </article>`;
 }
 
+function tubeCard(friend, index) {
+  const papers = ["#e9e6d5", "#f0e0d5", "#dde5db", "#e4e4ed", "#f0e6ca", "#e1e8e5"];
+  return `<button class="tube-portrait" type="button" data-friend-id="${escapeHtml(friend.id)}" aria-label="查看 ${escapeHtml(friend.name)} 的詳情" style="--portrait-paper:${papers[index % papers.length]}">
+    <span class="avatar">${avatarMarkup(friend).replace('loading="lazy"', 'loading="eager" draggable="false"')}</span>
+    <span class="tube-portrait-name">${escapeHtml(friend.name)}</span>
+    <span class="tube-portrait-relation">${escapeHtml(relationName(friend.relation))}</span>
+  </button>`;
+}
+
 function formatDate(value, short = false) {
   if (!value) return "尚未記錄";
   const date = new Date(`${value}T12:00:00`);
@@ -154,6 +175,9 @@ function formatDate(value, short = false) {
 function openDrawer(id) {
   const friend = state.friends.find(f => f.id === id);
   if (!friend) return;
+  if (!els.drawer.contains(document.activeElement)) drawerReturnFocus = document.activeElement;
+  tube.setSuspended(true);
+  els.drawer.inert = false;
   activeFriendId = id;
   activeDetailTab = "now";
   els.drawerContent.innerHTML = detailShellMarkup(friend);
@@ -161,6 +185,8 @@ function openDrawer(id) {
   requestAnimationFrame(() => els.drawer.classList.add("open"));
   els.drawer.setAttribute("aria-hidden", "false");
   document.body.classList.add("drawer-open");
+  document.querySelector(".app-shell").inert = true;
+  document.querySelector("#closeDrawer").focus({ preventScroll: true });
   if (location.hash !== `#/friend/${id}`) location.hash = `#/friend/${id}`; // 每位朋友各自的 URL
 }
 
@@ -291,9 +317,13 @@ function switchDetailTab(tab, sourceId = "") {
 
 function closeDrawer() {
   els.drawer.classList.remove("open");
+  document.querySelector(".app-shell").inert = false;
+  if (drawerReturnFocus?.isConnected) drawerReturnFocus.focus({ preventScroll: true });
+  els.drawer.inert = true;
   els.drawer.setAttribute("aria-hidden", "true");
   document.body.classList.remove("drawer-open");
-  setTimeout(() => { els.drawerBackdrop.hidden = true; }, 340);
+  tube.setSuspended(document.body.classList.contains("dialog-open"));
+  els.drawerBackdrop.hidden = true;
   activeFriendId = null;
   if (/^#\/friend\//.test(location.hash)) history.replaceState(null, "", location.pathname + location.search); // 清掉網址上的朋友 hash
 }
@@ -302,11 +332,13 @@ function openDialog(dialog) {
   if (dialog === els.friendDialog) els.friendForm.reset();
   dialog.showModal();
   document.body.classList.add("dialog-open");
+  tube.setSuspended(true);
 }
 
 function closeDialog(dialog) {
   dialog.close();
   document.body.classList.remove("dialog-open");
+  tube.setSuspended(els.drawer.classList.contains("open"));
 }
 
 // 新增一條原始記錄到某位朋友（抽屜「＋新增記錄」）；純手動，AI 不改
@@ -361,7 +393,10 @@ els.filterList.addEventListener("click", event => {
   const button = event.target.closest("button[data-filter]");
   if (!button) return;
   activeFilter = button.dataset.filter;
-  els.filterList.querySelectorAll("button").forEach(b => b.classList.toggle("active", b === button));
+  els.filterList.querySelectorAll("button").forEach(b => {
+    b.classList.toggle("active", b === button);
+    b.setAttribute("aria-pressed", String(b === button));
+  });
   render();
 });
 
@@ -401,6 +436,11 @@ document.querySelectorAll("[data-close-dialog]").forEach(button => button.addEve
 document.querySelectorAll("dialog").forEach(dialog => dialog.addEventListener("click", event => {
   if (event.target === dialog) closeDialog(dialog);
 }));
+// Native Escape closes a dialog without going through our close buttons.
+document.querySelectorAll("dialog").forEach(dialog => dialog.addEventListener("close", () => {
+  document.body.classList.remove("dialog-open");
+  tube.setSuspended(els.drawer.classList.contains("open"));
+}));
 
 els.friendForm.addEventListener("submit", async event => {
   event.preventDefault();
@@ -419,6 +459,10 @@ els.friendForm.addEventListener("submit", async event => {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const friend = await res.json();
     state.friends.unshift(friend);
+    // New friends must be visible even after the initial random 18-person draw.
+    state.visibleIds?.add(friend.id);
+    const faces = FACE_PACKS.flat();
+    state.faceOf[friend.id] = faces[((state.visibleIds?.size ?? state.friends.length) - 1) % faces.length];
     render();
     closeDialog(els.friendDialog);
     showToast(`已把 ${friend.name} 加進生活圈`);
@@ -459,12 +503,19 @@ els.sourceForm.addEventListener("submit", async event => {
   }
 });
 
+document.querySelector("#tubeView").addEventListener("click", () => setView("tube"));
 document.querySelector("#gridView").addEventListener("click", () => setView("grid"));
 document.querySelector("#listView").addEventListener("click", () => setView("list"));
 function setView(view) {
+  activeView = view;
   els.grid.classList.toggle("list-mode", view === "list");
-  document.querySelector("#gridView").classList.toggle("active", view === "grid");
-  document.querySelector("#listView").classList.toggle("active", view === "list");
+  for (const name of ["tube", "grid", "list"]) {
+    const button = document.querySelector(`#${name}View`);
+    button.classList.toggle("active", view === name);
+    button.setAttribute("aria-pressed", String(view === name));
+  }
+  document.querySelector("#filterHint").textContent = view === "tube" ? "轉一圈，遇見熟悉的臉孔" : "依最近互動排序";
+  render();
 }
 
 document.querySelector("#themeButton").addEventListener("click", () => {
@@ -474,7 +525,14 @@ document.querySelector("#themeButton").addEventListener("click", () => {
 if (localStorage.getItem("inner-circle-theme") === "dark") document.body.classList.add("dark");
 
 document.addEventListener("keydown", event => {
-  if (event.key === "Escape" && els.drawer.classList.contains("open")) closeDrawer();
+  if (event.key !== "Escape") return;
+  const dialog = document.querySelector("dialog[open]");
+  if (dialog) {
+    event.preventDefault();
+    closeDialog(dialog);
+  } else if (els.drawer.classList.contains("open")) {
+    closeDrawer();
+  }
 });
 
 // 每位朋友各自的 URL：#/friend/<id>。深連結、分享、書籤、返回鍵都可用。

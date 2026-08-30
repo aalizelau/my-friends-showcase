@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tube geometry baseline — source-informed CSS port</title>
+<style>
+  body { margin:0; overflow:hidden; background:#f8f7f3; }
+  #stage { position:relative; height:100vh; overflow:hidden; }
+  #world, .row { position:absolute; left:50%; top:50%; transform-style:preserve-3d; }
+  img { position:absolute; object-fit:contain; }
+  p { position:absolute; top:12px; left:20px; font:12px system-ui; color:#555; }
+</style>
+<div id="stage"><div id="world"></div></div>
+<p>Geometry baseline · source radius / camera / row speed · local avatar assets</p>
+<script>
+const stage=document.querySelector('#stage'), world=document.querySelector('#world');
+const rows=5, cols=12, rings=[]; let angle=0, velocity=0, direction=1, last=0, hover=false;
+// SOURCE: FiberScene.tsx ImageTube ring placement, row speed, camera and damping.
+// GUESS: CSS compositing + local avatar assets are a documented behavior rebuild.
+for(let r=0;r<rows;r++) {
+  const row=document.createElement('div');row.className='row';world.append(row);rings.push(row);
+  for(let c=0;c<cols;c++) {const img=document.createElement('img');img.src=`../../../assets/faces/face-${(r*cols+c)%9+1}.png`;row.append(img);}
+}
+function resize() {
+  const f=innerHeight/(2*Math.tan(25*Math.PI/180)), unit=f/6.5;stage.style.perspective=`${f}px`;
+  rings.forEach((row,r)=>{row.style.top=`${(r-2)*2.7*unit}px`;[...row.children].forEach((img,c)=>{
+    const theta=(c+(r%2?0.5:0))/cols*Math.PI*2;
+    img.style.width=`${.72*unit}px`;img.style.height=`${unit}px`;img.style.left=`${-.36*unit}px`;img.style.top=`${-.5*unit}px`;
+    img.style.transform=`translate3d(${Math.cos(theta)*4*unit}px,0,${Math.sin(theta)*4*unit}px) rotateY(${-(theta+Math.PI/2)}rad)`;
+  });});
+}
+addEventListener('resize',resize);resize();
+stage.addEventListener('wheel',e=>{velocity=Math.max(-2,Math.min(2,velocity+e.deltaY*.004));direction=Math.sign(e.deltaY)||direction;},{passive:true});
+stage.addEventListener('pointerover',e=>hover=e.target.tagName==='IMG');stage.addEventListener('pointerleave',()=>hover=false);
+function tick(now){const dt=Math.min((now-last)/1000||0,.05);last=now;velocity*=Math.pow(.92,dt*60);angle+=(direction*.25+velocity)*dt*(hover?.35:1);rings.forEach((row,r)=>row.style.transform=`rotateY(${angle*(.65+r/4*.9)}rad)`);requestAnimationFrame(tick);}requestAnimationFrame(tick);
+</script>
+</html>

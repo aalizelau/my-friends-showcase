@@ -1,0 +1,178 @@
+{
+  "schemaVersion": 3,
+  "source": {
+    "url": "https://github.com/matdn/helmet",
+    "canonicalUrl": "https://tympanus.net/Tutorials/3DImageTubeR3F/",
+    "route": "/Tutorials/3DImageTubeR3F/",
+    "viewport": {
+      "width": 1280,
+      "height": 720,
+      "dpr": 2
+    },
+    "browser": "Codex In-app Browser",
+    "backend": "WebGL via React Three Fiber",
+    "capturedAt": "2026-08-30T17:05:35.356566"
+  },
+  "candidates": [
+    {
+      "id": "tube-canvas",
+      "selector": "canvas",
+      "owner": "FiberScene > Canvas > ImageTube",
+      "context": "WebGL main thread"
+    }
+  ],
+  "lockStatus": "locked",
+  "allowedLockStatus": [
+    "unlocked",
+    "provisional",
+    "attributed",
+    "locked"
+  ],
+  "allowedTruth": [
+    "SOURCE",
+    "PARTIAL",
+    "GUESS"
+  ],
+  "targetSet": [
+    {
+      "id": "tube-canvas",
+      "subgroup": "ImageTube"
+    }
+  ],
+  "alternatives": [
+    {
+      "candidate": "GridPlane",
+      "excluded": "Background grid only, per shader source."
+    },
+    {
+      "candidate": "HelmetModel",
+      "excluded": "Center model, not the image rings; omitted as requested for warmer design."
+    }
+  ],
+  "effectBoundary": "ImageTube image rings and their movement; grid and helmet are excluded from requested adaptation.",
+  "hypotheses": [
+    {
+      "id": "canvas-tube",
+      "statement": "ImageTube owns the rotating image planes",
+      "status": "supported",
+      "evidenceFor": [
+        "source-module",
+        "source-frame"
+      ],
+      "evidenceAgainst": [],
+      "truth": "SOURCE"
+    }
+  ],
+  "allowedHypothesisStatus": [
+    "untested",
+    "supported",
+    "contradicted"
+  ],
+  "interactions": [],
+  "scopeRisk": "low",
+  "blockingUnknowns": [],
+  "nextProbe": {
+    "type": "local-baseline",
+    "target": "ImageTube geometry",
+    "resolves": [
+      "DOM projection can retain cylinder depth without importing React/Three into the dependency-free app."
+    ],
+    "distinguishes": [
+      "perspective cylinder",
+      "flat carousel"
+    ],
+    "expectedOutcomes": [
+      "Near planes enlarge, side planes narrow and back planes recede: supports cylinder. Otherwise fix projection."
+    ]
+  },
+  "evidence": [
+    {
+      "id": "source-module",
+      "path": "evidence/FiberScene.tsx",
+      "truth": "SOURCE",
+      "notes": "Home renders FiberScene; one Canvas owns ImageTube, GridPlane and HelmetModel. ImageTube JSX and useFrame bind cylindrical planes, camera, wheel and damping."
+    },
+    {
+      "id": "source-frame",
+      "path": "evidence/source.png",
+      "truth": "SOURCE",
+      "notes": "Single fullscreen canvas; three visible rings of images, scrolling translates and rotates the rings. No iframe or video. Browser only supports read-only evaluation, so ablation/preload unavailable."
+    }
+  ],
+  "gateDecision": {
+    "targetAttributed": true,
+    "targetLocked": true,
+    "requiredEvidence": {
+      "visualAttribution": [
+        {
+          "status": "passed",
+          "evidenceId": "source-module",
+          "path": "evidence/FiberScene.tsx",
+          "truth": "SOURCE",
+          "notes": "ImageTube image rings and their movement; grid and helmet are excluded from requested adaptation."
+        }
+      ],
+      "targetSet": [
+        {
+          "status": "passed",
+          "evidenceId": "source-module",
+          "path": "evidence/FiberScene.tsx",
+          "truth": "SOURCE",
+          "notes": "ImageTube image rings and their movement; grid and helmet are excluded from requested adaptation."
+        }
+      ],
+      "contextAndOwner": [
+        {
+          "status": "passed",
+          "evidenceId": "source-module",
+          "path": "evidence/FiberScene.tsx",
+          "truth": "SOURCE",
+          "notes": "ImageTube image rings and their movement; grid and helmet are excluded from requested adaptation."
+        }
+      ],
+      "targetBoundSourceOrFramework": [
+        {
+          "status": "passed",
+          "evidenceId": "source-module",
+          "path": "evidence/FiberScene.tsx",
+          "truth": "SOURCE",
+          "notes": "ImageTube image rings and their movement; grid and helmet are excluded from requested adaptation."
+        }
+      ],
+      "effectBoundary": [
+        {
+          "status": "passed",
+          "evidenceId": "source-module",
+          "path": "evidence/FiberScene.tsx",
+          "truth": "SOURCE",
+          "notes": "ImageTube image rings and their movement; grid and helmet are excluded from requested adaptation."
+        }
+      ],
+      "primaryTraceRoute": [
+        {
+          "status": "passed",
+          "evidenceId": "source-module",
+          "path": "evidence/FiberScene.tsx",
+          "truth": "SOURCE",
+          "notes": "ImageTube image rings and their movement; grid and helmet are excluded from requested adaptation."
+        }
+      ],
+      "alternativesExcluded": [
+        {
+          "status": "passed",
+          "evidenceId": "source-module",
+          "path": "evidence/FiberScene.tsx",
+          "truth": "SOURCE",
+          "notes": "ImageTube image rings and their movement; grid and helmet are excluded from requested adaptation."
+        }
+      ]
+    },
+    "blockers": [],
+    "decidedAt": "2026-08-30T17:05:35.356566"
+  },
+  "truthNotes": {
+    "source": [],
+    "partial": [],
+    "guess": []
+  }
+}
