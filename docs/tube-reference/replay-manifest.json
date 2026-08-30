@@ -1,0 +1,220 @@
+{
+  "schemaVersion": 3,
+  "source": {
+    "url": "https://github.com/matdn/helmet",
+    "canonicalUrl": "https://tympanus.net/Tutorials/3DImageTubeR3F/",
+    "route": "/Tutorials/3DImageTubeR3F/",
+    "permissionBoundary": "public",
+    "allowedPermissionBoundaries": [
+      "public",
+      "user-authorized",
+      "external-blocked"
+    ],
+    "viewport": {
+      "width": 1280,
+      "height": 720,
+      "dpr": 2
+    }
+  },
+  "targetSurfaces": [
+    {
+      "id": "tube-canvas",
+      "subgroup": "ImageTube"
+    }
+  ],
+  "runtime": {
+    "backend": "CSS perspective adaptation of source WebGL geometry",
+    "framework": "vanilla JavaScript",
+    "platform": "local Node static server",
+    "owner": "main document"
+  },
+  "renderGraph": {
+    "passes": [
+      "DOM image planes projected with CSS perspective"
+    ],
+    "framebuffers": [],
+    "dependencies": [
+      "local avatar PNGs"
+    ]
+  },
+  "resources": [
+    {
+      "path": "../../assets/faces/",
+      "truth": "SOURCE"
+    },
+    {
+      "path": "../../assets/faces-2/",
+      "truth": "SOURCE"
+    }
+  ],
+  "state": {
+    "gl": {},
+    "webgpu": {},
+    "canvas2d": {}
+  },
+  "timeline": {
+    "timeOrigin": "requestAnimationFrame",
+    "unit": "seconds",
+    "deltaRule": "dt capped after interruptions; exponential damping derived from source 0.92 at 60Hz",
+    "random": "None in baseline; existing app random avatar assignment remains."
+  },
+  "inputs": {
+    "pointer": "hover slows rotation; drag added in adaptation",
+    "scroll": "Source deltaY * .004 spin, .002 vertical translation; adaptation lets normal page scroll pass through.",
+    "resize": "Projection recomputed from container height; design scales intentionally differ.",
+    "route": "Original Tube route only"
+  },
+  "output": {
+    "colorSpace": "sRGB DOM images",
+    "toneMapping": "none",
+    "premultipliedAlpha": null,
+    "domComposite": "transparent local avatar PNGs; final warm paper and pastel cards requested by user"
+  },
+  "pageBindings": [],
+  "routes": [],
+  "evidence": [
+    {
+      "id": "source-module",
+      "path": "evidence/FiberScene.tsx",
+      "truth": "SOURCE",
+      "notes": "Home renders FiberScene; one Canvas owns ImageTube, GridPlane and HelmetModel. ImageTube JSX and useFrame bind cylindrical planes, camera, wheel and damping."
+    },
+    {
+      "id": "source-frame",
+      "path": "evidence/source.png",
+      "truth": "SOURCE",
+      "notes": "Single fullscreen canvas; three visible rings of images, scrolling translates and rotates the rings. No iframe or video. Browser only supports read-only evaluation, so ablation/preload unavailable."
+    }
+  ],
+  "truth": {
+    "leafFacts": [
+      {
+        "fact": "radius 4; tile .72 x 1; row spacing 2.7; 5 x 12; camera z6.5 and fov50",
+        "truth": "SOURCE",
+        "evidenceId": "source-module"
+      },
+      {
+        "fact": "Final card proportions, colors, number of rings and interaction sensitivity",
+        "truth": "GUESS",
+        "notes": "Intentional product design adaptation, not claimed as exact extraction."
+      }
+    ],
+    "wiringFacts": [
+      {
+        "fact": "row rotation = angle * (0.65 + row/(rows-1)*0.9); alternate half-column offset; inertia damping pow(.92, dt*60)",
+        "truth": "SOURCE",
+        "evidenceId": "source-module"
+      },
+      {
+        "fact": "CSS projected DOM planes replace WebGL meshBasicMaterial; readable reverse sides and finite unique friends",
+        "truth": "GUESS",
+        "notes": "Explicitly approximate adaptation to keep actual accessible controls and zero external dependencies."
+      }
+    ],
+    "defaultLabel": "GUESS",
+    "allowedTruth": [
+      "SOURCE",
+      "PARTIAL",
+      "GUESS"
+    ]
+  },
+  "unknowns": {
+    "blocking": [],
+    "important": [
+      "CSS backface/compositing differs from WebGL. No helmet, technical grid, audio, or repeated infinite vertical rows in final design."
+    ],
+    "deferred": [],
+    "external": []
+  },
+  "replay": {
+    "route": "BEHAVIOR_REBUILD",
+    "allowedRoutes": [
+      "SOURCE_REPLAY",
+      "PIPELINE_REPLAY",
+      "BEHAVIOR_REBUILD"
+    ],
+    "fidelityTier": "Source-informed cylindrical gallery adaptation, not a pixel-identical shader extraction",
+    "fallbacks": [
+      "Use local avatar assets instead of external photography; CSS 3D instead of React/Three. These are intentional scope choices."
+    ]
+  },
+  "gateDecision": {
+    "replayReady": true,
+    "requiredEvidence": {
+      "targetSurfaces": [
+        {
+          "status": "passed",
+          "evidenceId": "source-module",
+          "path": "evidence/FiberScene.tsx",
+          "truth": "SOURCE",
+          "notes": "Source-informed cylindrical gallery adaptation, not a pixel-identical shader extraction"
+        }
+      ],
+      "runtimeOwnerBackend": [
+        {
+          "status": "passed",
+          "evidenceId": "source-module",
+          "path": "evidence/FiberScene.tsx",
+          "truth": "SOURCE",
+          "notes": "Source-informed cylindrical gallery adaptation, not a pixel-identical shader extraction"
+        }
+      ],
+      "renderGraphOrFallback": [
+        {
+          "status": "passed",
+          "evidenceId": "source-module",
+          "path": "evidence/FiberScene.tsx",
+          "truth": "GUESS",
+          "notes": "Source-informed cylindrical gallery adaptation, not a pixel-identical shader extraction"
+        }
+      ],
+      "criticalResources": [
+        {
+          "status": "passed",
+          "evidenceId": "source-module",
+          "path": "evidence/FiberScene.tsx",
+          "truth": "GUESS",
+          "notes": "Source-informed cylindrical gallery adaptation, not a pixel-identical shader extraction"
+        }
+      ],
+      "timelineAndInputs": [
+        {
+          "status": "passed",
+          "evidenceId": "source-module",
+          "path": "evidence/FiberScene.tsx",
+          "truth": "GUESS",
+          "notes": "Source-informed cylindrical gallery adaptation, not a pixel-identical shader extraction"
+        }
+      ],
+      "outputComposite": [
+        {
+          "status": "passed",
+          "evidenceId": "source-module",
+          "path": "evidence/FiberScene.tsx",
+          "truth": "GUESS",
+          "notes": "Source-informed cylindrical gallery adaptation, not a pixel-identical shader extraction"
+        }
+      ],
+      "truthLabels": [
+        {
+          "status": "passed",
+          "evidenceId": "source-module",
+          "path": "evidence/FiberScene.tsx",
+          "truth": "GUESS",
+          "notes": "Source-informed cylindrical gallery adaptation, not a pixel-identical shader extraction"
+        }
+      ],
+      "blockingUnknownsResolvedOrDowngraded": [
+        {
+          "status": "passed",
+          "evidenceId": "source-module",
+          "path": "evidence/FiberScene.tsx",
+          "truth": "GUESS",
+          "notes": "Source-informed cylindrical gallery adaptation, not a pixel-identical shader extraction"
+        }
+      ]
+    },
+    "blockers": [],
+    "decidedAt": "2026-08-30T17:05:35.356566"
+  }
+}

@@ -1,5 +1,6 @@
 // 朋友資料改由後端讀取層提供（data/friends/*.md）；見 server.mjs 與 docs/profile-schema.md
 import { StampBoard } from "./stamp-board.mjs";
+import { FriendTube } from "./tube.js";
 import { focusLineFor, selectBoardFriends } from "./focus-lines.mjs";
 
 const palettes = [
@@ -51,6 +52,7 @@ let activeFriendId = null;
 let activeDetailTab = "now";
 let toastTimer;
 let drawerCloseTimer;
+let activeView = "tube";
 
 const els = {
   grid: document.querySelector("#friendsGrid"),
@@ -76,6 +78,14 @@ const stampBoard = new StampBoard({
   shuffle: document.querySelector("#shuffleStamps"),
   status: document.querySelector("#boardStatus"),
   onOpenProfile: openDrawer
+});
+
+const tube = new FriendTube({
+  stage: document.querySelector("#tubeStage"),
+  world: document.querySelector("#tubeWorld"),
+  gallery: document.querySelector("#tubeGallery"),
+  cardMarkup: tubeCard,
+  onOpen: openDrawer
 });
 
 function escapeHtml(value = "") {
@@ -122,7 +132,37 @@ function render() {
   els.empty.hidden = friends.length !== 0;
   els.grid.hidden = friends.length === 0;
   els.grid.innerHTML = friends.map(friendCard).join("");
-  stampBoard.sync();
+  tube.setFriends(friends);
+  updateView();
+}
+
+function updateView() {
+  const hasFriends = visibleFriends().length > 0;
+  document.querySelector("#stampBoard").hidden = activeView !== "stamps" || !hasFriends;
+  document.querySelector("#stampActions").hidden = activeView !== "stamps";
+  document.querySelector("#tubeControls").hidden = activeView !== "tube";
+  tube.setEnabled(activeView === "tube" && hasFriends);
+  // Measure only after the stamp board is visible, never at a hidden width of zero.
+  if (activeView === "stamps") stampBoard.sync();
+  for (const view of ["tube", "stamps"]) {
+    const button = document.querySelector(`#${view}View`);
+    button.classList.toggle("active", activeView === view);
+    button.setAttribute("aria-pressed", String(activeView === view));
+  }
+}
+
+function setView(view) {
+  stampBoard.closeFocus(false);
+  activeView = view;
+  updateView();
+}
+
+function tubeCard(friend, index) {
+  const papers = ["#e9e6d5", "#f0e0d5", "#dde5db", "#e4e4ed", "#f0e6ca", "#e1e8e5"];
+  return `<button class="tube-portrait" type="button" data-friend-id="${escapeHtml(friend.id)}" aria-label="查看 ${escapeHtml(friend.name)} 的詳情" style="--portrait-paper:${papers[index % papers.length]}">
+    <span class="avatar">${avatarMarkup(friend).replace('loading="lazy"', 'loading="eager" draggable="false"')}</span>
+    <span class="tube-portrait-name">${escapeHtml(friend.name)}</span>
+  </button>`;
 }
 
 function friendCard(friend) {
@@ -142,6 +182,7 @@ function openDrawer(id) {
   const friend = state.friends.find(f => f.id === id);
   if (!friend) return;
   stampBoard.closeFocus(false);
+  tube.setSuspended(true);
   activeFriendId = id;
   activeDetailTab = "now";
   clearTimeout(drawerCloseTimer);
@@ -293,7 +334,11 @@ function closeDrawer() {
   clearTimeout(drawerCloseTimer);
   drawerCloseTimer = setTimeout(() => { els.drawerBackdrop.hidden = true; }, 340);
   activeFriendId = null;
-  (stampBoard.entries.get(returnId)?.element || document.querySelector("#organiseStamps")).focus({ preventScroll: true });
+  const returnCard = activeView === "tube"
+    ? [...document.querySelector("#tubeWorld").children].find(card => card.dataset.friendId === returnId)
+    : stampBoard.entries.get(returnId)?.element;
+  (returnCard || document.querySelector(`#${activeView}View`)).focus({ preventScroll: true });
+  tube.setSuspended(document.body.classList.contains("dialog-open"));
   if (/^#\/friend\//.test(location.hash)) history.replaceState(null, "", location.pathname + location.search); // 清掉網址上的朋友 hash
 }
 
@@ -301,11 +346,13 @@ function openDialog(dialog) {
   if (dialog === els.friendDialog) els.friendForm.reset();
   dialog.showModal();
   document.body.classList.add("dialog-open");
+  tube.setSuspended(true);
 }
 
 function closeDialog(dialog) {
   dialog.close();
   document.body.classList.remove("dialog-open");
+  tube.setSuspended(els.drawer.classList.contains("open"));
 }
 
 // 新增一條原始記錄到某位朋友（抽屜「＋新增記錄」）；純手動，AI 不改
@@ -381,6 +428,12 @@ document.querySelectorAll("[data-close-dialog]").forEach(button => button.addEve
 document.querySelectorAll("dialog").forEach(dialog => dialog.addEventListener("click", event => {
   if (event.target === dialog) closeDialog(dialog);
 }));
+document.querySelectorAll("dialog").forEach(dialog => dialog.addEventListener("close", () => {
+  document.body.classList.remove("dialog-open");
+  tube.setSuspended(els.drawer.classList.contains("open"));
+}));
+document.querySelector("#tubeView").addEventListener("click", () => setView("tube"));
+document.querySelector("#stampsView").addEventListener("click", () => setView("stamps"));
 
 els.friendForm.addEventListener("submit", async event => {
   event.preventDefault();
@@ -441,7 +494,12 @@ els.sourceForm.addEventListener("submit", async event => {
 });
 
 document.addEventListener("keydown", event => {
-  if (event.key === "Escape" && els.drawer.classList.contains("open")) closeDrawer();
+  if (event.key !== "Escape") return;
+  const dialog = document.querySelector("dialog[open]");
+  if (dialog) {
+    event.preventDefault();
+    closeDialog(dialog);
+  } else if (els.drawer.classList.contains("open")) closeDrawer();
 });
 
 // 每位朋友各自的 URL：#/friend/<id>。深連結、分享、書籤、返回鍵都可用。

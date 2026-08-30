@@ -11,6 +11,7 @@
     />
     <title>Inner Circle — 朋友手帳</title>
     <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="tube.css" />
   </head>
   <body>
     <div class="app-shell">
@@ -34,12 +35,29 @@
             <div class="friends-area">
               <div class="result-bar">
                 <p><strong id="resultCount">0</strong> 位朋友</p>
-                <div class="board-actions" aria-label="整理朋友郵票">
+                <div class="collection-controls">
+                <div class="tube-controls" id="tubeControls" role="group" aria-label="環繞相簿控制">
+                  <button type="button" id="tubePrevious" aria-label="向左轉動相簿">←</button>
+                  <button type="button" id="tubePause" aria-pressed="false" aria-label="暫停自動旋轉"><span id="tubePauseIcon" aria-hidden="true">Ⅱ</span><span class="sr-only" id="tubePauseLabel">暫停</span></button>
+                  <button type="button" id="tubeNext" aria-label="向右轉動相簿">→</button>
+                </div>
+                <div class="board-actions" id="stampActions" aria-label="整理朋友郵票" hidden>
                   <button id="organiseStamps" type="button"><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="3" y="3" width="5" height="5" rx=".5"/><rect x="12" y="3" width="5" height="5" rx=".5"/><rect x="3" y="12" width="5" height="5" rx=".5"/><rect x="12" y="12" width="5" height="5" rx=".5"/></svg>Organise</button>
                   <button id="shuffleStamps" type="button"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 5h2c4 0 6 10 10 10h2m-3-3 3 3-3 3M3 15h2c1.5 0 2.7-1.4 4-3.2M11 8.2C12.3 6.4 13.5 5 15 5h2m-3-3 3 3-3 3"/></svg>Shuffle</button>
                 </div>
+                <div class="collection-views" role="group" aria-label="檢視方式">
+                  <button type="button" id="tubeView" class="active" aria-pressed="true" aria-controls="tubeGallery">Tube</button>
+                  <button type="button" id="stampsView" aria-pressed="false" aria-controls="stampBoard">Stamps</button>
+                </div>
+                </div>
               </div>
-              <div class="stamp-board" id="stampBoard" aria-label="朋友郵票收藏" aria-describedby="boardHelp">
+              <div class="tube-gallery" id="tubeGallery" hidden>
+                <div class="tube-stage" id="tubeStage" role="region" aria-label="朋友環繞相簿" aria-describedby="tubeHelp">
+                  <div class="tube-world" id="tubeWorld"></div>
+                </div>
+                <p class="sr-only" id="tubeHelp">左右拖曳或使用方向按鈕轉動。以 Tab 選取朋友，Enter 開啟手帳。可暫停自動旋轉。</p>
+              </div>
+              <div class="stamp-board" id="stampBoard" aria-label="朋友郵票收藏" aria-describedby="boardHelp" hidden>
                 <div class="friends-grid" id="friendsGrid"></div>
                 <div class="focus-bubble" id="stampFocusBubble" hidden role="note" aria-label="依手帳想像的語氣，非本人原話">
                   <p class="focus-bubble-text"></p>

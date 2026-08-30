@@ -1,0 +1,102 @@
+{
+  "schemaVersion": 3,
+  "state": "DONE_PROJECTIZED",
+  "gateStatus": {
+    "targetAttributed": true,
+    "targetLocked": true,
+    "replayReady": true,
+    "baselineVerified": true,
+    "projectVerified": true
+  },
+  "strategy": {
+    "primaryTraceRoute": "Public FiberScene.tsx",
+    "replayRoute": "BEHAVIOR_REBUILD",
+    "toolProfile": "navigate, DOM read, screenshot, interaction, local run; no ablation/preload/GPU capture"
+  },
+  "attempts": [],
+  "targetSet": [
+    {
+      "id": "tube-canvas",
+      "subgroup": "ImageTube"
+    }
+  ],
+  "unknowns": {
+    "blocking": [],
+    "important": [],
+    "deferred": [],
+    "external": []
+  },
+  "evidenceIndex": [
+    {
+      "id": "source-module",
+      "path": "evidence/FiberScene.tsx",
+      "truth": "SOURCE",
+      "notes": "Home renders FiberScene; one Canvas owns ImageTube, GridPlane and HelmetModel. ImageTube JSX and useFrame bind cylindrical planes, camera, wheel and damping."
+    },
+    {
+      "id": "source-frame",
+      "path": "evidence/source.png",
+      "truth": "SOURCE",
+      "notes": "Single fullscreen canvas; three visible rings of images, scrolling translates and rotates the rings. No iframe or video. Browser only supports read-only evaluation, so ablation/preload unavailable."
+    }
+  ],
+  "allowedGateArtifactStatuses": [
+    "missing",
+    "incomplete",
+    "passed",
+    "blocked"
+  ],
+  "artifacts": {
+    "scoutCard": "scout-card.json",
+    "manifest": "replay-manifest.json",
+    "qaReport": "qa-report.md",
+    "knownGaps": "known-gaps.md"
+  },
+  "gateArtifacts": {
+    "targetAttribution": {
+      "artifact": "scout-card.json",
+      "status": "passed"
+    },
+    "targetLock": {
+      "artifact": "scout-card.json",
+      "status": "passed"
+    },
+    "replayReady": {
+      "artifact": "replay-manifest.json",
+      "status": "passed"
+    },
+    "baselineVerify": {
+      "artifact": "qa-report.md",
+      "status": "passed"
+    },
+    "projectVerify": {
+      "artifact": "qa-report.md",
+      "status": "passed"
+    }
+  },
+  "budgets": {
+    "sameStrategyMax": 2,
+    "captureStrategyCategoriesMax": 3,
+    "repairRoundsMax": 6,
+    "plateauRoundsMax": 2
+  },
+  "plateau": {
+    "roundsWithoutProgress": 0,
+    "lastProgress": ""
+  },
+  "nextAction": {
+    "state": "DONE_PROJECTIZED",
+    "unknown": "None blocking",
+    "action": "Review the local app on redesign-friends-tube",
+    "expectedEvidence": "User design feedback"
+  },
+  "replayTier": "Source-informed cylindrical gallery adaptation, not a pixel-identical shader extraction",
+  "qa": {
+    "sourceToBaseline": [
+      "Passed with documented scope differences; see qa-report.md"
+    ],
+    "baselineToEditable": [
+      "Passed responsive and interactive checks; see qa-report.md"
+    ]
+  }
+}
