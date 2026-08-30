@@ -11,7 +11,44 @@ const palettes = [
   { skin: "#c6805c", hair: "#171d1a", shirt: "#2f62db", bg: "#e5dfc8" }
 ];
 
-let state = { friends: [] };
+let state = { friends: [], visibleIds: null, faceOf: {} };
+
+// 重新設計：隨機抽人顯示、其餘暫時隱藏；頭像換成手繪臉孔切片（透明背景、無底色）。
+// 每組臉孔包 9 張；依序把每一組分配給不同的人，一組用完換下一組。
+const FACE_PACKS = [
+  Array.from({ length: 9 }, (_, i) => `assets/faces/face-${i + 1}.png`),
+  Array.from({ length: 9 }, (_, i) => `assets/faces-2/face-${i + 1}.png`)
+];
+
+function assignFaces() {
+  const shuffled = [...state.friends];
+  for (let i = shuffled.length - 1; i > 0; i--) { // Fisher–Yates 洗牌
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  state.visibleIds = new Set();
+  state.faceOf = {};
+  let cursor = 0;
+  for (const pack of FACE_PACKS) {
+    for (const src of pack) {
+      const friend = shuffled[cursor++];
+      if (!friend) break; // 人數不夠時就停
+      state.visibleIds.add(friend.id);
+      state.faceOf[friend.id] = src;
+    }
+  }
+}
+
+function visibleFriends() {
+  return state.visibleIds ? state.friends.filter(f => state.visibleIds.has(f.id)) : state.friends;
+}
+
+// 有分配到臉孔切片就用圖片頭像，否則退回手繪 SVG
+function avatarMarkup(friend) {
+  const src = state.faceOf[friend.id];
+  if (src) return `<img class="avatar-img" src="${escapeHtml(src)}" alt="${escapeHtml(friend.name)} 的頭像" loading="lazy" />`;
+  return avatarSvg(friend.avatar, friend.name);
+}
 let activeFilter = "all";
 let activeFriendId = null;
 let activeDetailTab = "now";
@@ -72,7 +109,7 @@ function latestInteraction(friend) {
 
 function filteredFriends() {
   const query = els.search.value.trim().toLowerCase();
-  return state.friends
+  return visibleFriends()
     .filter(friend => activeFilter === "all" || friend.relation === activeFilter)
     .filter(friend => {
       const haystack = [friend.name, friend.nickname, friend.lifeUpdate, friend.note, ...(friend.interests || [])].join(" ").toLowerCase();
@@ -88,11 +125,12 @@ function render() {
   els.grid.hidden = friends.length === 0;
   els.grid.innerHTML = friends.map(friendCard).join("");
 
+  const visible = visibleFriends();
   const counts = {
-    all: state.friends.length,
-    close: state.friends.filter(f => f.relation === "close").length,
-    work: state.friends.filter(f => f.relation === "work").length,
-    community: state.friends.filter(f => f.relation === "community").length
+    all: visible.length,
+    close: visible.filter(f => f.relation === "close").length,
+    work: visible.filter(f => f.relation === "work").length,
+    community: visible.filter(f => f.relation === "community").length
   };
   document.querySelector("#countAll").textContent = counts.all;
   document.querySelector("#countClose").textContent = counts.close;
@@ -102,7 +140,7 @@ function render() {
 
 function friendCard(friend) {
   return `<article class="friend-card" tabindex="0" role="button" data-friend-id="${escapeHtml(friend.id)}" aria-label="查看 ${escapeHtml(friend.name)} 的詳情">
-    <div class="avatar">${avatarSvg(friend.avatar, friend.name)}</div>
+    <div class="avatar">${avatarMarkup(friend)}</div>
     <h3>${escapeHtml(friend.name)}</h3>
   </article>`;
 }
@@ -129,7 +167,7 @@ function openDrawer(id) {
 function detailShellMarkup(friend) {
   const profile = profileFor(friend);
   return `<header class="detail-header">
-      <div class="detail-avatar">${avatarSvg(friend.avatar, friend.name)}</div>
+      <div class="detail-avatar">${avatarMarkup(friend)}</div>
       <div class="detail-identity">
         <p class="eyebrow">PERSON PROFILE</p>
         <h2>${escapeHtml(friend.name)}</h2>
@@ -460,6 +498,7 @@ async function init() {
     const res = await fetch("/api/friends");
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     state.friends = await res.json();
+    assignFaces(); // 隨機抽人 + 分配臉孔切片（兩組共 18 位）
   } catch (err) {
     console.error("讀取朋友資料失敗", err);
     showToast("讀取資料失敗，請確認伺服器有在執行（node server.mjs）");
