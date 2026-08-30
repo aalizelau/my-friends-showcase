@@ -275,17 +275,24 @@ export class RingCarousel {
   }
 
   onWheel(e) {
-    if (e.ctrlKey || this.suspended || this.items.length < 2) return;
-    this.tween = null;
-    // horizontal wheels/trackpads report deltaX; fall back to deltaY for mice
+    if (e.ctrlKey || this.destroyed || this.suspended || document.hidden || !this.inViewport || this.dragging || this.items.length < 2) return;
+    // Long speech bubbles retain their own scroll area (and CSS scroll containment).
+    const text = e.target?.closest?.('.focus-bubble-text');
+    if (text && text.scrollHeight > text.clientHeight) return;
     const units = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? this.H : 1;
-    const delta = (this.orientation === "horizontal" ? (e.deltaX || e.deltaY) : e.deltaY) * units;
+    const dx = e.deltaX || 0, dy = e.deltaY || 0;
+    const delta = (this.orientation === "horizontal" && Math.abs(dx) > Math.abs(dy) ? dx : dy) * units;
     if (!delta) return;
+    e.preventDefault();
+    this.tween = null;
     if (this.motion.matches) {
       this.turn(delta > 0 ? -1 : 1);
       return;
     }
+    this.rotation += clamp(delta * this.scrollSpeed, -this.step, this.step);
     this.velocity = clamp(this.velocity + delta * this.scrollSpeed, -this.maxSpeed, this.maxSpeed);
+    this.layout();
+    this.updateFront();
     this.syncAnimation();
   }
 
@@ -386,7 +393,7 @@ export class RingCarousel {
 
   addEventListeners() {
     this.listen(window, "resize", this._onResize);
-    this.listen(this.mount, "wheel", this._onWheel, { passive: true });
+    this.listen(this.mount, "wheel", this._onWheel, { passive: false });
     this.listen(this.stage, "pointerdown", this._onDown);
     this.listen(window, "pointermove", this._onMove);
     this.listen(window, "pointerup", this._onUp);

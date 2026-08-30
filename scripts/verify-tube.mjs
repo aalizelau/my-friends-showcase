@@ -6,6 +6,7 @@ import { runInNewContext } from 'node:vm';
 class Element {
   constructor() {
     this.handlers = new Map();
+    this.eventOptions = new Map();
     this.style = {};
     this.dataset = {};
     this.children = [];
@@ -14,7 +15,7 @@ class Element {
     this.clientHeight = 560;
     this.classList = { toggle() {}, add() {}, remove() {} };
   }
-  addEventListener(type, fn) { this.handlers.set(type, [...(this.handlers.get(type) || []), fn]); }
+  addEventListener(type, fn, options) { this.handlers.set(type, [...(this.handlers.get(type) || []), fn]); this.eventOptions.set(type, options); }
   emit(type, event = {}) { for (const fn of this.handlers.get(type) || []) fn(event); }
   setAttribute(key, value) { this.attributes[key] = value; }
   set innerHTML(value) {
@@ -115,6 +116,68 @@ tube.setFriends([]);
 tube.setEnabled(false);
 assert.equal(frames.size, 0);
 console.log('✓ Tube: reduced motion, explicit play, pause, offscreen/hidden/modal lifecycle, view switching, touch scrolling, drag interruption, single/empty results and mobile projection');
+
+function wheel(input = {}) {
+  const event = { deltaX: 0, deltaY: 120, deltaMode: 0, prevented: false,
+    preventDefault() { this.prevented = true; }, ...input };
+  stage.emit('wheel', event);
+  return event;
+}
+stage.clientWidth = 1280;
+tube.setFriends(friends);
+tube.setEnabled(true);
+assert.equal(stage.eventOptions.get('wheel').passive, false);
+assert.equal(window.handlers.has('wheel'), false, 'Page scrolling outside Tube must remain available');
+assert.equal(document.handlers.has('wheel'), false);
+for (const mode of [
+  { paused: true, reduced: false }, { paused: true, reduced: true },
+  { paused: false, reduced: false }, { paused: false, reduced: false, focused: true }
+]) for (const input of [
+  { deltaY: 120 }, { deltaY: -120 }, { deltaX: 120, deltaY: 0 },
+  { deltaX: 1, deltaY: -120 }, { deltaY: 3, deltaMode: 1 }, { deltaY: 1, deltaMode: 2 }
+]) {
+  tube.paused = mode.paused;
+  media.matches = mode.reduced;
+  tube.focused = !!mode.focused;
+  tube.angle = 0;
+  tube.targetAngle = 1;
+  tube.velocity = 0;
+  tube.draw();
+  const before = world.children[0].style.transform;
+  const event = wheel(input);
+  assert.equal(event.prevented, true, 'Scrolling over Tube must not also scroll the page');
+  assert.notEqual(world.children[0].style.transform, before, 'Wheel scrolling should rotate immediately, even while paused');
+  assert.equal(Math.sign(tube.angle), Math.sign(input.deltaY || input.deltaX));
+  assert.equal(tube.targetAngle, null, 'Manual scrolling takes over an arrow-button turn');
+  if (mode.paused || mode.focused) {
+    assert.equal(tube.velocity, 0);
+    assert.equal(frames.size, 0, 'Manual input must not restart paused autoplay');
+  }
+}
+for (const configure of [
+  () => ({ ctrlKey: true }), () => ({ deltaX: 0, deltaY: 0 }),
+  () => { tube.enabled = false; return {}; },
+  () => { tube.suspended = true; return {}; },
+  () => { tube.inViewport = false; return {}; },
+  () => { document.hidden = true; return {}; },
+  () => { tube.drag = {}; return {}; }
+]) {
+  tube.enabled = true; tube.suspended = false; tube.inViewport = true; document.hidden = false; tube.drag = null;
+  const input = configure();
+  const before = tube.angle;
+  assert.equal(wheel(input).prevented, false, 'Zoom and unavailable views should not capture scrolling');
+  assert.equal(tube.angle, before);
+}
+tube.drag = null; tube.enabled = true; tube.suspended = false; tube.inViewport = true; document.hidden = false;
+for (const count of [0, 1]) {
+  tube.setFriends(friends.slice(0, count));
+  assert.equal(wheel().prevented, false, 'Do not trap scrolling with fewer than two friends');
+}
+tube.setEnabled(false);
+tube.setFriends([]);
+media.matches = true;
+assert.equal(frames.size, 0);
+console.log('✓ Tube wheel containment: vertical/horizontal trackpads, pause, reduced motion, focus, delta units, zoom and inactive views');
 
 // Independently project the actual CSS transforms, including all four corners.
 function projectedBounds(card) {

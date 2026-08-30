@@ -203,14 +203,23 @@ export class FriendTube {
     });
     stage.addEventListener('dragstart', event => event.preventDefault());
     stage.addEventListener('wheel', event => {
-      // Never trap page scrolling or interfere with pinch-to-zoom.
-      if (event.ctrlKey || this.paused || this.suspended || this.motion.matches) return;
+      // Wheel input belongs to this view; pinch-to-zoom still belongs to the browser.
+      if (event.ctrlKey || !this.canAnimate() || this.drag) return;
       const units = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? stage.clientHeight : 1;
-      const delta = (event.deltaX || event.deltaY) * units;
-      this.velocity = Math.max(-1.2, Math.min(1.2, this.velocity + delta * .002));
-      this.direction = Math.sign(delta) || this.direction;
+      const dx = event.deltaX || 0, dy = event.deltaY || 0;
+      const delta = (Math.abs(dx) > Math.abs(dy) ? dx : dy) * units;
+      if (!delta) return;
+      event.preventDefault();
+      const rotation = Math.max(-.5, Math.min(.5, delta * .002));
+      this.targetAngle = null;
+      this.angle += rotation;
+      // Pause stops autoplay, not manual browsing; reduced motion gets no inertia.
+      this.velocity = this.paused || this.focused || this.motion.matches ? 0
+        : Math.max(-1.2, Math.min(1.2, this.velocity + rotation));
+      this.direction = Math.sign(delta);
+      this.draw();
       this.syncAnimation();
-    }, { passive: true });
+    }, { passive: false });
     this.updatePauseButton();
   }
 

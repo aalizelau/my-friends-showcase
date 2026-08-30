@@ -7,11 +7,11 @@ const source = (await readFile(new URL('../carousel.js', import.meta.url), 'utf8
 
 class Element {
   constructor() {
-    this.events = new Map(); this.children = []; this.dataset = {}; this.attributes = {};
+    this.events = new Map(); this.eventOptions = new Map(); this.children = []; this.dataset = {}; this.attributes = {};
     this.style = {}; this.clientWidth = 1280; this.clientHeight = 680;
     this.classList = { add() {}, remove() {} };
   }
-  addEventListener(type, fn) { if (!this.events.has(type)) this.events.set(type, new Set()); this.events.get(type).add(fn); }
+  addEventListener(type, fn, options) { if (!this.events.has(type)) this.events.set(type, new Set()); this.events.get(type).add(fn); this.eventOptions.set(type, options); }
   removeEventListener(type, fn) { this.events.get(type)?.delete(fn); }
   emit(type, event = {}) { for (const fn of this.events.get(type) || []) fn(event); }
   setAttribute(key, value) { this.attributes[key] = value; }
@@ -71,12 +71,59 @@ test('reduced motion centres and opens the correct friend, with keyboard and man
   assert.equal(carousel.metaEl.metaName.textContent, 'Friend 2');
   mount.emit('keydown', { key: 'ArrowRight', preventDefault() {} });
   assert.equal(carousel.frontSlot, 3);
-  carousel.onWheel({ deltaX: 1, deltaY: 0, deltaMode: 0 });
+  carousel.onWheel({ deltaX: 1, deltaY: 0, deltaMode: 0, preventDefault() {} });
   assert.equal(carousel.frontSlot, 2);
   const rotation = carousel.rotation;
   carousel.onWheel({ ctrlKey: true, deltaY: 100 });
   assert.equal(carousel.rotation, rotation);
   assert.equal(frames.size, 0);
+});
+
+test('wheel input rotates Ring without scrolling the page, including reduced motion and trackpads', () => {
+  for (const reduced of [false, true]) for (const input of [
+    { deltaY: 120 }, { deltaY: -120 }, { deltaX: 120 },
+    { deltaX: 1, deltaY: -120 }, { deltaY: 3, deltaMode: 1 }, { deltaY: 1, deltaMode: 2 }
+  ]) {
+    const { carousel, mount, window, frames } = fixture({ reduced });
+    let prevented = false;
+    const before = carousel.rotation;
+    assert.equal(mount.eventOptions.get('wheel').passive, false);
+    assert.equal(window.events.has('wheel'), false, 'No global scroll interception');
+    mount.emit('wheel', { deltaX: 0, deltaY: 0, deltaMode: 0, ...input, preventDefault() { prevented = true; } });
+    assert.equal(prevented, true);
+    assert.notEqual(carousel.rotation, before, 'Wheel movement should respond immediately');
+    assert.equal(Math.sign(carousel.rotation - before), Math.sign(input.deltaY || input.deltaX));
+    if (reduced) assert.equal(frames.size, 0);
+    carousel.destroy();
+  }
+});
+
+test('Ring leaves zoom, unavailable views and scrollable speech bubbles alone', () => {
+  const cases = [
+    ({}, event) => { event.ctrlKey = true; },
+    ({}, event) => { event.deltaY = 0; },
+    ({ carousel }) => carousel.setSuspended(true),
+    ({ carousel }) => { carousel.inViewport = false; },
+    ({ document }) => { document.hidden = true; },
+    ({ carousel }) => carousel.destroy(),
+    ({}, event) => { event.target = { closest: () => ({ scrollHeight: 240, clientHeight: 160 }) }; }
+  ];
+  for (const configure of cases) {
+    const view = fixture();
+    let prevented = false;
+    const event = { deltaY: 120, preventDefault() { prevented = true; } };
+    configure(view, event);
+    const before = view.carousel.rotation;
+    view.mount.emit('wheel', event);
+    assert.equal(prevented, false);
+    assert.equal(view.carousel.rotation, before);
+    if (!view.carousel.destroyed) view.carousel.destroy();
+  }
+  for (const count of [0, 1]) {
+    const { carousel, mount } = fixture({ count });
+    mount.emit('wheel', { deltaY: 120, preventDefault() { assert.fail('Do not trap scrolling without browsable friends'); } });
+    carousel.destroy();
+  }
 });
 
 test('animation settles, pauses when hidden or suspended, and releases resources on exit', () => {
