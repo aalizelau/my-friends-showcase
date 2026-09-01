@@ -1,3 +1,5 @@
+import { t } from "./i18n.js";
+
 /* Source-informed adaptation of ImageTube in https://github.com/matdn/helmet.
  * Cylinder positions, staggered rows and inertia come from FiberScene.tsx.
  * Rows retain differential speeds; desktop uses compact projection-aware
@@ -267,9 +269,9 @@ export class FriendTube {
 
   updatePauseButton() {
     this.pauseButton.setAttribute('aria-pressed', String(this.paused));
-    this.pauseButton.setAttribute('aria-label', this.paused ? '開始自動旋轉' : '暫停自動旋轉');
+    this.pauseButton.setAttribute('aria-label', this.paused ? t('tubePlayAria') : t('tubePauseAria'));
     document.querySelector('#tubePauseIcon').textContent = this.paused ? '▷' : 'Ⅱ';
-    document.querySelector('#tubePauseLabel').textContent = this.paused ? '播放' : '暫停';
+    document.querySelector('#tubePauseLabel').textContent = this.paused ? t('tubePlayLabel') : t('tubePauseLabel');
   }
 
   resize() {

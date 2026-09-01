@@ -123,7 +123,12 @@ function parseBodySources(body) {
     let metaLine = restLines[k] || "";
     let archive = false;
     if (metaLine.endsWith(" · archive: true")) { archive = true; metaLine = metaLine.slice(0, -" · archive: true".length); }
-    let date = "", label = "";
+    let date = "", label = "", labelEn = "";
+    const lei = metaLine.indexOf(" · labelEn: ");
+    if (lei >= 0) {
+      labelEn = metaLine.slice(lei + " · labelEn: ".length).trim();
+      metaLine = metaLine.slice(0, lei);
+    }
     const li = metaLine.indexOf(" · label: ");
     if (metaLine.startsWith("date: ") && li >= 0) {
       date = metaLine.slice("date: ".length, li).trim();
@@ -133,10 +138,15 @@ function parseBodySources(body) {
         const ci = seg.indexOf(": ");
         if (ci < 0) continue;
         const key = seg.slice(0, ci).trim(), val = seg.slice(ci + 2).trim();
-        if (key === "date") date = val; else if (key === "label") label = val;
+        if (key === "date") date = val; else if (key === "label") label = val; else if (key === "labelEn") labelEn = val;
       }
     }
-    sources.push({ id, date, label, archive, text: restLines.slice(k + 1).join("\n").trim() });
+    const raw = restLines.slice(k + 1).join("\n").trim();
+    const split = raw.split(/\n===en===\n/);
+    const source = { id, date, label, archive, text: (split[0] || "").trim() };
+    if (labelEn) source.labelEn = labelEn;
+    if (split[1] != null) source.textEn = split[1].trim();
+    sources.push(source);
   }
   return sources;
 }

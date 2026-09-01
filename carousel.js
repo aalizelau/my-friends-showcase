@@ -1,3 +1,5 @@
+import { t } from "./i18n.js";
+
 /*
  * Ring carousel — the part of Yousuf-developer/Viscose-carousel worth keeping:
  * cards riding a big wheel that sits mostly off-screen, so you see a tall arc
@@ -72,7 +74,7 @@ export class RingCarousel {
 
     this.metaEl = document.createElement("div");
     this.metaEl.className = "carousel-meta";
-    this.metaEl.innerHTML = `<h2 class="carousel-meta__name"></h2>`;
+    this.metaEl.innerHTML = `<span class="carousel-meta__num"></span><h2 class="carousel-meta__name"></h2><p class="carousel-meta__tags"></p>`;
     this.mount.appendChild(this.metaEl);
 
     this.bubbleEl = document.createElement("div");
@@ -80,7 +82,7 @@ export class RingCarousel {
     this.bubbleEl.className = "focus-bubble carousel-bubble";
     this.bubbleEl.hidden = true;
     this.bubbleEl.setAttribute("role", "note");
-    this.bubbleEl.setAttribute("aria-label", "依手帳想像的語氣，非本人原話");
+    this.bubbleEl.setAttribute("aria-label", t("focusBubbleAria"));
     this.bubbleText = document.createElement("p");
     this.bubbleText.className = "focus-bubble-text";
     this.bubbleEl.appendChild(this.bubbleText);
@@ -93,7 +95,7 @@ export class RingCarousel {
       el.type = "button";
       el.className = "carousel-card";
       el.dataset.slot = String(i);
-      el.setAttribute("aria-label", `查看 ${item.name || "朋友"} 的詳情`);
+      el.setAttribute("aria-label", t("tubePortraitAria", { name: item.name || t("thisFriend") }));
       if (item.markup) el.innerHTML = item.markup;
       else {
         const img = document.createElement("img");
@@ -127,11 +129,12 @@ export class RingCarousel {
       this.cardW = clamp(W * 0.185, Math.min(190, W * .56), 300);
       // Reserve a stable speech area, even when passing a friend without notes.
       // Keep the card, name and bubble within the stage on shorter screens.
-      if (this.hasBubbles) this.cardW = Math.min(this.cardW, Math.max(120, H - 358) / 1.18);
+      // Reserve extra vertical room for the numbered, airier meta block below the card.
+      if (this.hasBubbles) this.cardW = Math.min(this.cardW, Math.max(120, H - 430) / 1.18);
       this.cardH = this.cardW * 1.18;
       this.R = Math.max((W * 0.30) / Math.sin(Math.min(this.step, Math.PI / 3)), 720);
       this.frontX = W * 0.5;
-      this.frontY = H * 0.46;
+      this.frontY = H * 0.42;
       if (this.hasBubbles) this.frontY = Math.max(this.frontY, 244 + this.cardH / 2);
       this.cx = this.frontX;        // centre directly below the front card
       this.cy = this.frontY + this.R;
@@ -157,7 +160,7 @@ export class RingCarousel {
       // meta centred just below the front card
       this.metaEl.classList.add("carousel-meta--center");
       this.metaEl.style.left = this.frontX + "px";
-      this.metaEl.style.top = (this.frontY + this.cardH * 0.5 + 26) + "px";
+      this.metaEl.style.top = (this.frontY + this.cardH * 0.5 + 22) + "px";
       this.metaEl.style.maxWidth = Math.min(this.W * 0.6, 520) + "px";
     } else {
       // meta sits just right of the front card (like Viscose's side type)
@@ -199,7 +202,9 @@ export class RingCarousel {
     if (slot === this.frontSlot) return;
     this.frontSlot = slot;
     const item = this.items[slot];
+    this.metaEl.querySelector(".carousel-meta__num").textContent = String(slot + 1).padStart(2, "0");
     this.metaEl.querySelector(".carousel-meta__name").textContent = item.name || "";
+    this.metaEl.querySelector(".carousel-meta__tags").textContent = item.tags || "";
     this.bubbleText.textContent = item.bubble || "";
   }
 

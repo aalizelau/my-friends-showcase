@@ -49,7 +49,7 @@ const context = {
   requestAnimationFrame: fn => { frames.set(++frameId, fn); return frameId; },
   cancelAnimationFrame: id => frames.delete(id),
 };
-runInNewContext(`${(await readFile(new URL('../tube.js', import.meta.url), 'utf8')).replace('export class FriendTube', 'class FriendTube')}\nthis.FriendTube = FriendTube;`, context);
+runInNewContext(`function t(key) { return key; }\n${(await readFile(new URL('../tube.js', import.meta.url), 'utf8')).replace(/^import .*\n/, '').replace('export class FriendTube', 'class FriendTube')}\nthis.FriendTube = FriendTube;`, context);
 const stage = new Element(), world = new Element(), gallery = new Element();
 const tube = new context.FriendTube({ stage, world, gallery, cardMarkup: f => `<button data-friend-id="${f.id}"></button>`, onOpen() {} });
 const friends = Array.from({ length: 18 }, (_, i) => ({ id: String(i + 1) }));

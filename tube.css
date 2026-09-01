@@ -37,9 +37,10 @@
   -webkit-backface-visibility: hidden;
 }
 .tube-portrait::after { content: ""; position: absolute; inset: 4px; border: 1px solid rgba(255,255,255,.25); border-radius: inherit; pointer-events: none; }
-.tube-portrait .avatar { width: 103px; height: 98px; margin: 0 0 7px; flex-shrink: 0; pointer-events: none; }
+.tube-portrait .avatar { width: 103px; height: 90px; margin: 0 0 4px; flex-shrink: 0; pointer-events: none; }
 .tube-portrait .avatar-img { height: 100%; object-fit: contain; pointer-events: none; -webkit-user-drag: none; }
-.tube-portrait-name { display: block; flex-shrink: 0; font: 400 15px/1.65 var(--font-handwritten); font-synthesis: none; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tube-portrait-name { display: block; flex-shrink: 0; margin: 0; font: 400 15px/1.4 var(--font-handwritten); font-synthesis: none; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tube-portrait-tags { display: block; flex-shrink: 0; width: 122px; margin: 2px -9px 0; font: 400 9px/1.35 var(--font); letter-spacing: -.1px; color: rgba(39,63,51,.6); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: center; }
 .tube-portrait:hover { outline: 1.5px solid var(--forest); outline-offset: 4px; }
 .tube-portrait:focus-visible { outline: 3px solid var(--forest); outline-offset: 5px; }
 .collection-controls { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 10px; }

@@ -1,3 +1,5 @@
+import { t } from "./i18n.js";
+
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 const axes = ["x", "y", "angle", "scale"];
 const copy = position => ({ ...position });
@@ -177,7 +179,7 @@ export class StampBoard {
       this.paint(entry);
     });
     this.organise.classList.toggle("active", mode === "organise");
-    this.status.textContent = mode === "organise" ? "已整理朋友郵票。" : "已重新散落朋友郵票，人物與頭像保持不變。";
+    this.status.textContent = mode === "organise" ? t("statusOrganised") : t("statusShuffled");
     this.start();
   }
 
@@ -230,7 +232,10 @@ export class StampBoard {
     }
     this.positionFocus();
     this.controls.querySelector("#openFocusedFriend").focus({ preventScroll: true });
-    this.status.textContent = `正在專注查看 ${entry.element.dataset.friendName}。${line ? `依手帳想像的語氣，非本人原話：${line.text} ` : ""}按 Escape 返回收藏。`;
+    this.status.textContent = t("statusFocus", {
+      name: entry.element.dataset.friendName,
+      quote: line ? t("statusFocusQuote", { text: line.text }) : ""
+    });
     this.start();
   }
 
@@ -271,7 +276,7 @@ export class StampBoard {
       entry.element.style.zIndex = String(++this.layer);
       if (restoreFocus) entry.element.focus({ preventScroll: true });
     }
-    this.status.textContent = "已返回收藏，郵票回到原來的位置。";
+    this.status.textContent = t("statusReturned");
     this.start();
   }
 
@@ -324,7 +329,7 @@ export class StampBoard {
       }, this.metrics);
       drag.entry.goal = copy(drag.entry.home);
       this.organise.classList.remove("active");
-      this.status.textContent = `已移動 ${drag.entry.element.dataset.friendName}。`;
+      this.status.textContent = t("statusMoved", { name: drag.entry.element.dataset.friendName });
       this.start();
     }
     if (drag.entry.element.hasPointerCapture(event.pointerId)) drag.entry.element.releasePointerCapture(event.pointerId);

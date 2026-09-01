@@ -76,7 +76,7 @@ test("My Friends uses the local Mountains of Christmas bold 700 face only for th
   const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
   const css = await readFile(new URL("../styles.css", import.meta.url), "utf8");
   assert.match(html, /<title>My Friends<\/title>/);
-  assert.match(html, /aria-label="My Friends 首頁"/);
+  assert.match(html, /aria-label="我的朋友首頁"/);
   assert.match(html, /class="brand-title">My Friends<\/span>/);
   assert.doesNotMatch(html, /Inner Circle|inner circle\./);
   assert.match(css, /@font-face\s*\{[^}]*font-family: "Mountains of Christmas";[^}]*MountainsofChristmas-Bold\.ttf[^}]*font-weight: 700;/);

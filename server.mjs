@@ -106,7 +106,11 @@ async function createSource(req, res, id) {
   friend.profile = friend.profile ?? {};
   friend.profile.sources = friend.profile.sources ?? [];
   const sid = uniqueSourceId(date, friend.profile.sources);
-  friend.profile.sources.push({ id: sid, date, label, archive: false, text });
+  friend.profile.sources.push({
+    id: sid, date, label, archive: false, text,
+    ...(typeof body.textEn === "string" && body.textEn.trim() ? { textEn: body.textEn.trim() } : {}),
+    ...(typeof body.labelEn === "string" && body.labelEn.trim() ? { labelEn: body.labelEn.trim() } : {})
+  });
   await atomicWrite(friendPath(id), friendToMarkdown(friend));
   res.writeHead(201, { "content-type": "application/json; charset=utf-8", "x-source-id": sid })
     .end(JSON.stringify(await readFriend(id)));
@@ -123,7 +127,9 @@ async function editSource(req, res, id, sid) {
   const text = String(body.text ?? "").trim();
   if (!text) return sendJSON(res, 400, { error: "text 為必填" });
   src.text = text;
+  if (typeof body.textEn === "string") src.textEn = body.textEn.trim();
   if (typeof body.label === "string" && body.label.trim()) src.label = body.label.trim();
+  if (typeof body.labelEn === "string" && body.labelEn.trim()) src.labelEn = body.labelEn.trim();
   if (typeof body.date === "string" && body.date.trim()) src.date = body.date.trim();
   await atomicWrite(friendPath(id), friendToMarkdown(friend));
   sendJSON(res, 200, await readFriend(id));

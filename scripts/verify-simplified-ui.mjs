@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { runInNewContext } from "node:vm";
 import { focusLineFor } from "../focus-lines.mjs";
+import { dict } from "../i18n.js";
 
 const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
 const css = await readFile(new URL("../styles.css", import.meta.url), "utf8");
@@ -16,13 +17,13 @@ test("the collection has no search, category UI, dark theme, footer or marketing
   assert.doesNotMatch(html, /tube-center|circle-intro|tube-portrait-relation/);
   assert.doesNotMatch(app, /inner-circle-theme|activeFilter|relationName|els\.search|els\.filterList/);
   assert.match(html, /name="color-scheme" content="light"/);
-  for (const id of ["organiseStamps", "shuffleStamps", "stampFocusBubble", "boardHelp", "openAddFriend"]) {
+  for (const id of ["organiseStamps", "shuffleStamps", "stampFocusBubble", "boardHelp"]) {
     assert.ok(html.includes(`id="${id}"`));
   }
 });
 
 test("the toolbar shows the friend prompt and Tube retains two non-interactive ring lines", () => {
-  assert.match(html, /<p>點選朋友，看看近況<\/p>/);
+  assert.match(html, /<p[^>]*>點選朋友，看看近況<\/p>/);
   assert.doesNotMatch(html + app, /resultCount/);
   assert.equal((html.match(/class="tube-orbit tube-orbit-(?:top|bottom)" aria-hidden="true"/g) || []).length, 2);
   assert.match(tubeCss, /\.tube-orbit \{ pointer-events: none;/);
@@ -109,6 +110,7 @@ async function startApplication(friends, storage = new Map()) {
   const rings = [];
   const sandbox = {
     document: {
+      documentElement: { dataset: {} },
       querySelector: selector => nodes.get(selector) || null,
       querySelectorAll: selector => selector === "dialog" ? [nodes.get("#friendDialog"), nodes.get("#sourceDialog")] : [],
       addEventListener() {},
@@ -144,6 +146,7 @@ async function startApplication(friends, storage = new Map()) {
       setFriends(friends) { this.options.world.innerHTML = friends.map(this.options.cardMarkup).join(""); }
       setEnabled(enabled) { this.enabled = enabled; this.options.gallery.hidden = !enabled; }
       setSuspended(suspended) { this.suspended = suspended; }
+      updatePauseButton() {}
     },
     RingCarousel: class {
       constructor(options) {
@@ -157,6 +160,13 @@ async function startApplication(friends, storage = new Map()) {
     },
     selectBoardFriends: records => records.slice(),
     focusLineFor,
+    // i18n stubs: return the zh strings so the UI markup matches the pre-i18n assertions.
+    t: (key, vars) => { let s = dict.zh[key] ?? key; if (vars) for (const k in vars) s = s.split("{" + k + "}").join(vars[k]); return s; },
+    getLang: () => "zh",
+    setLang: () => {},
+    applyStaticI18n: () => {},
+    localizeFriend: friend => friend,
+    localizeFocusLine: line => line,
     setTimeout: () => 1,
     clearTimeout() {},
     requestAnimationFrame: callback => callback(),
@@ -371,10 +381,6 @@ test("opening profiles and dialogs suspends Tube and closing restores the right 
   closeProfile();
   assert.equal(tube.suspended, false);
   assert.equal(nodes.get("#tubeWorld").children[0].wasFocused, true);
-  nodes.get("#openAddFriend").events.get("click")();
-  assert.equal(tube.suspended, true);
-  nodes.get("#friendDialog").events.get("close")();
-  assert.equal(tube.suspended, false, "Native dialog close must resume the tube");
   tube.options.onOpen("1");
   nodes.get("#sourceDialog").events.get("close")();
   assert.equal(tube.suspended, true, "Closing a source dialog must not animate behind the profile");
@@ -403,19 +409,9 @@ test("Ring shares friend data, pauses behind profiles, and is destroyed when swi
   assert.equal(tube.enabled, true);
 });
 
-test("a friend can be added to an empty collection without choosing a category", async () => {
-  const { nodes, writes } = await startApplication([]);
-  assert.equal(nodes.get("#emptyState").hidden, false);
-  await nodes.get("#friendForm").events.get("submit")({ preventDefault() {} });
-  assert.deepEqual(writes, [{ name: "New friend", nickname: "", relation: "community", birthday: "" }]);
-  assert.equal(nodes.get("#tubeWorld").children.length, 1);
-  assert.equal(nodes.get("#emptyState").hidden, true);
-  assert.equal(nodes.get("#friendDialog").closed, true);
-});
-
 test("Ring uses the same source-backed personality lines as Stamps and profiles open at the top", async () => {
   const friends = [
-    { id: "1", name: "Recorded friend", profile: { sources: [{ id: "2026-08-26", text: "Existing notes" }] } },
+    { id: "1", name: "Recorded friend", profile: { sources: [{ id: "2026-08", text: "Existing notes" }] } },
     { id: "2", name: "Blank friend" }
   ];
   const { nodes, rings, stamps, closeProfile } = await startApplication(friends);

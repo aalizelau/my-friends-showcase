@@ -15,7 +15,7 @@
 | 層級 | 欄位 | 規則 |
 |---|---|---|
 | **永久・真相**（append-only，永不被覆寫） | `sources`、`interactions`、身分欄位（id/name/…） | 只由人手或明確動作新增/修改；AI 重新總結**不得**觸碰 |
-| **可重生・衍生視圖**（隨時可從 sources 重建） | `now`、`recent`、`recentSources`、`relationship`（友誼高光）、`todo`、`topics`、`timeline` | 純 AI 摘要；重新總結時整個重寫沒關係 |
+| **可重生・衍生視圖**（隨時可從 sources 重建） | `tags`（興趣標籤）、`now`、`recent`、`recentSources`、`relationship`（友誼高光）、`todo`、`topics`、`timeline` | 純 AI 摘要；重新總結時整個重寫沒關係 |
 
 `relationship`（友誼高光）和 `todo` 也是**可重生**的衍生視圖——它們是從 sources 精選/前瞻整理出來的，不是唯一真相，AI 重新總結時可以連它們一起重寫。
 
@@ -27,14 +27,20 @@
 
 ```yaml
 id: "2"                   # string，唯一，等於檔名；由伺服器發的遞增數字編號
-name: Alvin               # string，必填
-nickname: Alvin · London  # string，可空
+name: Oliver               # string，必填
+nickname: Oliver · London  # string，可空
 relation: close           # close | work | community
 birthday: 1995-05-04      # string(YYYY-MM-DD)，可選（只有部分人有）
 birthYear: 2000           # number，可選
 avatar: 6                 # number，頭像調色盤索引（0–7）
 lifeUpdate: …             # string，卡片/搜尋用的近況一句話
 note: …                   # string，一句話備註
+tags: ["籃球", "露營", …]   # string[]，興趣標籤；可另給 tagsEn 供英文介面
+lifeUpdate: …             # 近況一句話；可另給 lifeUpdateEn
+note: …                   # 備註；可另給 noteEn
+
+# 衍生摘要裡的字串可加對應 *En（labelEn / valueEn / titleEn / pointsEn / textEn …）
+# 英文介面會顯示 *En，中文介面用原欄位。原始 md 仍保留中文真相。
 
 interactions:             # 「片段/moments」時間線（人手新增），可為 []
   - id: a1
@@ -79,9 +85,13 @@ profile:                  # 衍生摘要（可由 body 的 sources 重新生成�
 ## Sources · 原始記錄
 
 ### archive
-date: ARCHIVE · label: 日期不詳的長期筆記 · archive: true
+date: ARCHIVE · label: 日期不詳的長期筆記 · labelEn: Undated notes · archive: true
 
-<原文，逐字保留，可多段落>
+<中文原文>
+
+===en===
+
+<English original>
 
 ### 2022-06
 date: 2022.06 · label: 儲蓄與移英準備

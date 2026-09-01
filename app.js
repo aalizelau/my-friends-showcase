@@ -3,6 +3,11 @@ import { StampBoard } from "./stamp-board.mjs";
 import { FriendTube } from "./tube.js";
 import { RingCarousel } from "./carousel.js";
 import { focusLineFor, selectBoardFriends } from "./focus-lines.mjs";
+import { t, getLang, setLang, applyStaticI18n } from "./i18n.js";
+import { localizeFriend, localizeFocusLine } from "./locale-content.mjs";
+
+// GitHub Pages / static builds set data-readonly on <html>; local server.mjs stays writable.
+const isReadOnly = document.documentElement?.dataset?.readonly === "true";
 
 const palettes = [
   { skin: "#f29a82", hair: "#292e2b", shirt: "#e75837", bg: "#efe0ca" },
@@ -46,7 +51,7 @@ function visibleFriends() {
 // 有分配到臉孔切片就用圖片頭像，否則退回手繪 SVG
 function avatarMarkup(friend) {
   const src = state.faceOf[friend.id];
-  if (src) return `<img class="avatar-img" src="${escapeHtml(src)}" alt="${escapeHtml(friend.name)} 的頭像" loading="lazy" />`;
+  if (src) return `<img class="avatar-img" src="${escapeHtml(src)}" alt="${escapeHtml(t("avatarAlt", { name: friend.name }))}" loading="lazy" />`;
   return avatarSvg(friend.avatar, friend.name);
 }
 let activeFriendId = null;
@@ -110,7 +115,7 @@ const stampBoard = new StampBoard({
   grid: els.grid,
   controls: document.querySelector("#stampFocusControls"),
   bubble: document.querySelector("#stampFocusBubble"),
-  getFocusBubble: id => focusLineFor(state.friends.find(friend => friend.id === id)),
+  getFocusBubble: id => localizeFocusLine(focusLineFor(state.friends.find(friend => friend.id === id))),
   organise: document.querySelector("#organiseStamps"),
   shuffle: document.querySelector("#shuffleStamps"),
   status: document.querySelector("#boardStatus"),
@@ -142,7 +147,7 @@ function avatarSvg(seed = 0, name = "") {
   ];
   const hair = hairVariants[index % hairVariants.length];
   const glasses = index === 1 || index === 4 ? '<g fill="none" stroke="#fffdf7" stroke-width="4"><rect x="44" y="63" width="25" height="18" rx="7"/><rect x="80" y="63" width="25" height="18" rx="7"/><path d="M69 70h11"/></g>' : "";
-  return `<svg viewBox="0 0 150 150" role="img" aria-label="${escapeHtml(name)} 的手繪頭像">
+  return `<svg viewBox="0 0 150 150" role="img" aria-label="${escapeHtml(t("avatarDrawnAlt", { name }))}">
     <path d="M12 78C8 35 33 7 76 6c42-1 68 26 64 72-3 40-24 65-64 65-39 0-61-24-64-65Z" fill="${p.bg}"/>
     <path d="M30 144c5-31 20-47 46-47 28 0 43 17 47 47" fill="${p.shirt}"/>
     <ellipse cx="75" cy="69" rx="42" ry="49" fill="${p.skin}"/>
@@ -187,7 +192,8 @@ function updateView() {
       mount: document.querySelector("#carouselMode"),
       orientation: "horizontal",
       items: boardFriends().map(friend => ({ id: friend.id, name: friend.name,
-        bubble: focusLineFor(friend)?.text || "",
+        tags: tagLine(friend),
+        bubble: localizeFocusLine(focusLineFor(friend))?.text || "",
         markup: avatarMarkup(friend).replace('loading="lazy"', 'loading="eager" draggable="false"') })),
       onOpen: openDrawer
     });
@@ -212,25 +218,33 @@ function setView(view) {
   updateView();
 }
 
+// 興趣標籤的顯示字串：以「A · B · C」純文字呈現；沒有標籤回傳空字串
+function tagLine(friend) {
+  const tags = localizeFriend(friend).tags;
+  return (Array.isArray(tags) ? tags : []).filter(Boolean).join(" · ");
+}
+
 function tubeCard(friend, index) {
   const papers = ["#e9e6d5", "#f0e0d5", "#dde5db", "#e4e4ed", "#f0e6ca", "#e1e8e5"];
-  return `<button class="tube-portrait" type="button" data-friend-id="${escapeHtml(friend.id)}" aria-label="查看 ${escapeHtml(friend.name)} 的詳情" style="--portrait-paper:${papers[index % papers.length]}">
+  const tags = tagLine(friend);
+  return `<button class="tube-portrait" type="button" data-friend-id="${escapeHtml(friend.id)}" aria-label="${escapeHtml(t("tubePortraitAria", { name: friend.name }))}" style="--portrait-paper:${papers[index % papers.length]}">
     <span class="avatar">${avatarMarkup(friend).replace('loading="lazy"', 'loading="eager" draggable="false"')}</span>
     <span class="tube-portrait-name">${escapeHtml(friend.name)}</span>
+    ${tags ? `<span class="tube-portrait-tags">${escapeHtml(tags)}</span>` : ""}
   </button>`;
 }
 
 function friendCard(friend) {
-  return `<article class="friend-card" tabindex="0" role="button" data-friend-id="${escapeHtml(friend.id)}" data-friend-name="${escapeHtml(friend.name)}" aria-label="專注查看 ${escapeHtml(friend.name)}；方向鍵可移動" aria-expanded="false" aria-controls="stampFocusControls">
+  return `<article class="friend-card" tabindex="0" role="button" data-friend-id="${escapeHtml(friend.id)}" data-friend-name="${escapeHtml(friend.name)}" aria-label="${escapeHtml(t("cardAria", { name: friend.name }))}" aria-expanded="false" aria-controls="stampFocusControls">
     <div class="avatar">${avatarMarkup(friend)}</div>
     <h3>${escapeHtml(friend.name)}</h3>
   </article>`;
 }
 
 function formatDate(value, short = false) {
-  if (!value) return "尚未記錄";
+  if (!value) return t("phNotRecorded");
   const date = new Date(`${value}T12:00:00`);
-  return new Intl.DateTimeFormat("zh-Hant", short ? { month: "short", day: "numeric" } : { year: "numeric", month: "long", day: "numeric" }).format(date);
+  return new Intl.DateTimeFormat(t("localeTag"), short ? { month: "short", day: "numeric" } : { year: "numeric", month: "long", day: "numeric" }).format(date);
 }
 
 function openDrawer(id) {
@@ -259,36 +273,41 @@ function openDrawer(id) {
 }
 
 function detailShellMarkup(friend) {
+  friend = localizeFriend(friend);
   const profile = profileFor(friend);
-  const subtitle = [friend.nickname, friend.birthYear ? `Born ${friend.birthYear}` : ""].filter(Boolean).join(" · ");
+  // 身分列：有興趣標籤就以「A · B · C」純文字顯示，否則退回舊的「暱稱 · 出生年」
+  const tags = (Array.isArray(friend.tags) ? friend.tags : []).filter(Boolean);
+  const subtitle = tags.length
+    ? tags.join(" · ")
+    : [friend.nickname, friend.birthYear ? t("born", { year: friend.birthYear }) : ""].filter(Boolean).join(" · ");
   return `<header class="detail-header">
       <div class="detail-avatar">${avatarMarkup(friend)}</div>
       <div class="detail-identity">
         <h2>${escapeHtml(friend.name)}</h2>
         ${subtitle ? `<p>${escapeHtml(subtitle)}</p>` : ""}
       </div>
-      <button class="primary-button detail-add" type="button" data-add-source="${escapeHtml(friend.id)}">＋ 新增記錄</button>
     </header>
-    <nav class="detail-tabs" aria-label="朋友資料層次">
-      ${[["now", "Now"], ["us", "我們"], ["topics", "Topics"], ["timeline", "Timeline"], ["source", "Source"]].map(([id, label]) => `<button class="${id === "now" ? "active" : ""}" type="button" data-detail-tab="${id}">${label}${id === "source" ? `<span>${profile.sources.length}</span>` : ""}</button>`).join("")}
+    <nav class="detail-tabs" aria-label="${escapeHtml(t("tabsAria"))}">
+      ${[["now", t("tabNow")], ["us", t("tabUs")], ["topics", t("tabTopics")], ["timeline", t("tabTimeline")], ["source", t("tabSource")]].map(([id, label]) => `<button class="${id === "now" ? "active" : ""}" type="button" data-detail-tab="${id}">${escapeHtml(label)}${id === "source" ? `<span>${profile.sources.length}</span>` : ""}</button>`).join("")}
     </nav>
     <div class="detail-panel" id="detailPanel">${detailTabMarkup(friend, "now")}</div>
-    <div class="detail-footer"><button class="text-button detail-delete" type="button" data-delete-friend="${escapeHtml(friend.id)}">刪除這位朋友</button></div>`;
+    ${isReadOnly ? "" : `<div class="detail-footer"><button class="text-button detail-delete" type="button" data-delete-friend="${escapeHtml(friend.id)}">${escapeHtml(t("detailDelete"))}</button></div>`}`;
 }
 
 function profileFor(friend) {
+  friend = localizeFriend(friend);
   if (friend.profile && friend.profile.now) return friend.profile;
   // 還沒 AI 整理的朋友：now/topics 顯示佔位，但真實的 sources/relationship/todo 照樣呈現
   const p = friend.profile || {};
   return {
     now: [
-      { label: "最新近況", value: friend.lifeUpdate || "尚未記錄", detail: friend.note || "從 Source 分頁新增一則記錄開始。", sources: [] }
+      { label: t("phNowLabel"), value: friend.lifeUpdate || t("phNotRecorded"), detail: friend.note || t("phNowDetail"), sources: [] }
     ],
-    recent: friend.lifeUpdate || "還沒有近期更新。",
+    recent: friend.lifeUpdate || t("phNoRecent"),
     recentSources: [],
     relationship: p.relationship,
     todo: p.todo || [],
-    topics: (p.topics && p.topics.length) ? p.topics : [{ title: "尚未整理", summary: friend.note || "新增原始記錄後，再慢慢整理成主題。", points: [], sources: [] }],
+    topics: (p.topics && p.topics.length) ? p.topics : [{ title: t("phTopicTitle"), summary: friend.note || t("phTopicSummary"), points: [], sources: [] }],
     timeline: p.timeline || [],
     sources: p.sources || []
   };
@@ -308,12 +327,12 @@ function usMarkup(profile) {
   const todo = profile.todo || [];
   const highlights = rel && (rel.points?.length || rel.summary)
     ? `${rel.summary ? `<p class="us-summary">${escapeHtml(rel.summary)}</p>` : ""}${rel.points?.length ? `<ul class="us-points">${rel.points.map(p => `<li>${escapeHtml(p)}</li>`).join("")}</ul>` : ""}${sourceButtons(rel.sources)}`
-    : `<p class="us-empty">還沒有記錄你們之間的高光時刻。</p>`;
+    : `<p class="us-empty">${escapeHtml(t("usNoHighlights"))}</p>`;
   const todoList = todo.length
-    ? `<ul class="todo-list">${todo.map(t => `<li>${escapeHtml(t.text)}${sourceButtons(t.sources)}</li>`).join("")}</ul>`
-    : `<p class="us-empty">還沒有想一起做或聊的事。</p>`;
-  return `<section class="us-block"><h3 class="us-h">友誼高光</h3>${highlights}</section>
-    <section class="us-block"><h3 class="us-h">下次可以…</h3>${todoList}</section>`;
+    ? `<ul class="todo-list">${todo.map(item => `<li>${escapeHtml(item.text)}${sourceButtons(item.sources)}</li>`).join("")}</ul>`
+    : `<p class="us-empty">${escapeHtml(t("usNoTodo"))}</p>`;
+  return `<section class="us-block"><h3 class="us-h">${escapeHtml(t("usHighlights"))}</h3>${highlights}</section>
+    <section class="us-block"><h3 class="us-h">${escapeHtml(t("usNext"))}</h3>${todoList}</section>`;
 }
 
 function sourceButtons(ids = []) {
@@ -330,7 +349,7 @@ function nowMarkup(profile) {
     </section>`).join("")}</div>
     <section class="recent-update">
       <span class="status-dot" aria-hidden="true"></span>
-      <div><span>最近的變化</span><p>${escapeHtml(profile.recent)}</p>${sourceButtons(profile.recentSources)}</div>
+      <div><span>${escapeHtml(t("recentChange"))}</span><p>${escapeHtml(profile.recent)}</p>${sourceButtons(profile.recentSources)}</div>
     </section>`;
 }
 
@@ -365,13 +384,14 @@ function sourcesMarkup(profile, targetId = "") {
       <header class="source-group-header"><h2>${escapeHtml(title)}</h2><span>${escapeHtml(description)}</span><b>${sources.length}</b></header>
       <div class="source-list">${sources.map(source => sourceEntryMarkup(source, targetId)).join("")}</div>
     </section>` : "";
-  return `${sourceGroup("Archive", "日期不詳的原始筆記", archiveSources, "archive-group")}
-    ${sourceGroup("新加入的 Source", "具有明確加入日期的原始記錄", newSources)}`;
+  return `${sourceGroup(t("srcArchive"), t("srcArchiveDesc"), archiveSources, "archive-group")}
+    ${sourceGroup(t("srcNew"), t("srcNewDesc"), newSources)}`;
 }
 
 function sourceEntryMarkup(source, targetId = "") {
+  const edit = isReadOnly ? "" : `<button class="source-edit" type="button" data-edit-source="${escapeHtml(source.id)}">${escapeHtml(t("srcEdit"))}</button>`;
   return `<article class="source-entry ${source.archive ? "archive" : ""} ${source.id === targetId ? "target" : ""}" data-source-id="${escapeHtml(source.id)}">
-    <header><div><div class="source-stamp">${source.archive ? '<span class="archive-mark">ARCHIVE</span><small>日期不詳</small>' : `<time>${escapeHtml(source.date)}</time>`}</div><h3>${escapeHtml(source.label)}</h3></div><button class="source-edit" type="button" data-edit-source="${escapeHtml(source.id)}">編輯</button></header>
+    <header><div><div class="source-stamp">${source.archive ? `<span class="archive-mark">${escapeHtml(t("srcArchiveMark"))}</span><small>${escapeHtml(t("srcArchiveDate"))}</small>` : `<time>${escapeHtml(source.date)}</time>`}</div><h3>${escapeHtml(source.label)}</h3></div>${edit}</header>
     <pre>${escapeHtml(source.text)}</pre>
   </article>`;
 }
@@ -429,19 +449,21 @@ function closeDialog(dialog) {
 
 // 新增一條原始記錄到某位朋友（抽屜「＋新增記錄」）；純手動，AI 不改
 function openAddSource(friendId) {
+  if (isReadOnly) return;
   const friend = state.friends.find(f => f.id === friendId);
   if (!friend) return;
   els.sourceForm.reset();
   els.sourceForm.elements.friendId.value = friendId;
   els.sourceForm.elements.sourceId.value = "";
-  document.querySelector("#sourceEyebrow").textContent = "NEW RECORD";
-  document.querySelector("#sourceTitle").textContent = "新增記錄";
-  document.querySelector("#sourceDialogSub").textContent = `新增給 ${friend.name} 的原始記錄`;
+  document.querySelector("#sourceEyebrow").textContent = t("srcEyebrowNew");
+  document.querySelector("#sourceTitle").textContent = t("srcTitleNew");
+  document.querySelector("#sourceDialogSub").textContent = t("srcSubNew", { name: friend.name });
   openDialog(els.sourceDialog);
 }
 
 // 編輯 Source 分頁裡的一條原始記錄（手動，AI 不改）
 function openEditSource(friendId, sid) {
+  if (isReadOnly) return;
   const friend = state.friends.find(f => f.id === friendId);
   const src = friend && (friend.profile.sources || []).find(s => s.id === sid);
   if (!src) return;
@@ -449,11 +471,12 @@ function openEditSource(friendId, sid) {
   els.sourceForm.elements.friendId.value = friendId;
   els.sourceForm.elements.sourceId.value = sid;
   els.sourceForm.elements.date.value = src.date || "";
-  els.sourceForm.elements.label.value = src.label || "";
-  els.sourceForm.elements.text.value = src.text || "";
-  document.querySelector("#sourceEyebrow").textContent = "EDIT SOURCE";
-  document.querySelector("#sourceTitle").textContent = "編輯原始記錄";
-  document.querySelector("#sourceDialogSub").textContent = `${friend.name}｜${src.id}`;
+  const en = getLang() === "en";
+  els.sourceForm.elements.label.value = (en ? src.labelEn || src.label : src.label) || "";
+  els.sourceForm.elements.text.value = (en ? src.textEn || src.text : src.text) || "";
+  document.querySelector("#sourceEyebrow").textContent = t("srcEyebrowEdit");
+  document.querySelector("#sourceTitle").textContent = t("srcTitleEdit");
+  document.querySelector("#sourceDialogSub").textContent = t("srcSubEdit", { name: friend.name, id: src.id });
   openDialog(els.sourceDialog);
 }
 
@@ -464,7 +487,6 @@ function showToast(message) {
   toastTimer = setTimeout(() => els.toast.classList.remove("show"), 2600);
 }
 
-["openAddFriend", "emptyAddFriend"].forEach(id => document.querySelector(`#${id}`).addEventListener("click", () => openDialog(els.friendDialog)));
 document.querySelector("#closeDrawer").addEventListener("click", closeDrawer);
 els.drawerBackdrop.addEventListener("click", closeDrawer);
 // Native details toggle events do not bubble; capture handles mouse and keyboard changes.
@@ -487,19 +509,20 @@ els.drawer.addEventListener("click", event => {
 });
 
 async function deleteFriend(id) {
+  if (isReadOnly) return;
   const friend = state.friends.find(f => f.id === id);
-  const name = friend ? friend.name : "這位朋友";
-  if (!confirm(`確定要刪除「${name}」嗎？\n資料會移到 data/trash，可從那裡復原。`)) return;
+  const name = friend ? friend.name : t("thisFriend");
+  if (!confirm(t("confirmDelete", { name }))) return;
   try {
     const res = await fetch(`/api/friends/${encodeURIComponent(id)}`, { method: "DELETE" });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     state.friends = state.friends.filter(f => f.id !== id);
     closeDrawer();
     render();
-    showToast(`已刪除「${name}」`);
+    showToast(t("toastDeleted", { name }));
   } catch (err) {
     console.error("刪除失敗", err);
-    showToast("刪除失敗，請確認伺服器有在執行");
+    showToast(t("toastDeleteFail"));
   }
 }
 document.querySelectorAll("[data-close-dialog]").forEach(button => button.addEventListener("click", () => closeDialog(document.querySelector(`#${button.dataset.closeDialog}`))));
@@ -519,6 +542,7 @@ document.querySelector("#ringNext").addEventListener("click", () => carousel?.tu
 
 els.friendForm.addEventListener("submit", async event => {
   event.preventDefault();
+  if (isReadOnly) return;
   const data = new FormData(els.friendForm);
   const payload = {
     name: data.get("name").trim(),
@@ -537,21 +561,37 @@ els.friendForm.addEventListener("submit", async event => {
     state.visibleIds?.add(friend.id);
     render();
     closeDialog(els.friendDialog);
-    showToast(`已新增 ${friend.name}`);
+    showToast(t("toastAdded", { name: friend.name }));
     setTimeout(() => openDrawer(friend.id), 180);
   } catch (err) {
     console.error("新增朋友失敗", err);
-    showToast("新增失敗，請確認伺服器有在執行");
+    showToast(t("toastAddFail"));
   }
 });
 
 els.sourceForm.addEventListener("submit", async event => {
   event.preventDefault();
+  if (isReadOnly) return;
   const data = new FormData(els.sourceForm);
   const fid = data.get("friendId");
   const sid = data.get("sourceId");
   const editing = !!sid;
-  const payload = { text: data.get("text").trim(), label: data.get("label").trim(), date: data.get("date").trim() };
+  const raw = state.friends.find(f => f.id === fid);
+  const existing = editing && raw ? (raw.profile?.sources || []).find(s => s.id === sid) : null;
+  const typedText = data.get("text").trim();
+  const typedLabel = data.get("label").trim();
+  const payload = { date: data.get("date").trim() };
+  if (getLang() === "en") {
+    payload.text = (existing?.text || typedText).trim();
+    payload.label = (existing?.label || typedLabel).trim();
+    payload.textEn = typedText;
+    payload.labelEn = typedLabel;
+  } else {
+    payload.text = typedText;
+    payload.label = typedLabel;
+    if (existing?.textEn) payload.textEn = existing.textEn;
+    if (existing?.labelEn) payload.labelEn = existing.labelEn;
+  }
   if (!payload.text) return;
   const url = editing
     ? `/api/friends/${encodeURIComponent(fid)}/sources/${encodeURIComponent(sid)}`
@@ -567,11 +607,11 @@ els.sourceForm.addEventListener("submit", async event => {
     if (idx >= 0) state.friends[idx] = friend;
     render();
     closeDialog(els.sourceDialog);
-    showToast(editing ? "已更新原始記錄" : "已新增原始記錄");
+    showToast(editing ? t("toastSourceUpdated") : t("toastSourceAdded"));
     if (activeFriendId === friend.id && els.drawer.classList.contains("open")) switchDetailTab("source", newId);
   } catch (err) {
     console.error("儲存原始記錄失敗", err);
-    showToast("儲存失敗，請確認伺服器有在執行");
+    showToast(t("toastSaveFail"));
   }
 });
 
@@ -600,16 +640,41 @@ function applyHash() {
 }
 window.addEventListener("hashchange", applyHash);
 
+// 語言切換：套用靜態翻譯 + 更新切換鈕文字；動態內容重繪（含開啟中的手帳）。
+function applyLanguage() {
+  applyStaticI18n();
+  const toggle = document.querySelector("#langToggle");
+  if (toggle) toggle.textContent = t("langSwitchTo");
+  tube.updatePauseButton();
+  render();
+  if (activeFriendId != null && els.drawer.classList.contains("open")) {
+    const friend = state.friends.find(f => f.id === activeFriendId);
+    if (friend) {
+      const tab = activeDetailTab;
+      els.drawerContent.innerHTML = detailShellMarkup(friend);
+      switchDetailTab(tab);
+    }
+  }
+}
+document.querySelector("#langToggle").addEventListener("click", () => {
+  setLang(getLang() === "en" ? "zh" : "en");
+  applyLanguage();
+});
+
 async function init() {
   try {
-    const res = await fetch("/api/friends");
+    const res = await fetch(isReadOnly ? "data/friends.json" : "/api/friends");
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     state.friends = await res.json();
     assignFaces(); // 優先有記錄的朋友 + 分配臉孔切片（兩組共 18 位）
   } catch (err) {
     console.error("讀取朋友資料失敗", err);
-    showToast("讀取資料失敗，請確認伺服器有在執行（node server.mjs）");
+    showToast(t("toastLoadFail"));
   }
+  applyStaticI18n();
+  const toggle = document.querySelector("#langToggle");
+  if (toggle) toggle.textContent = t("langSwitchTo");
+  tube.updatePauseButton();
   render();
   applyHash(); // 開網址帶的朋友（深連結）
 }

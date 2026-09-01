@@ -38,26 +38,42 @@ function toFrontmatter(f) {
   if (f.birthday) fm.birthday = f.birthday;
   if (f.birthYear != null) fm.birthYear = f.birthYear;
   fm.avatar = f.avatar ?? 0;
+  if (f.nicknameEn) fm.nicknameEn = f.nicknameEn;
   if (f.lifeUpdate) fm.lifeUpdate = f.lifeUpdate;
+  if (f.lifeUpdateEn) fm.lifeUpdateEn = f.lifeUpdateEn;
   if (f.note) fm.note = f.note;
+  if (f.noteEn) fm.noteEn = f.noteEn;
+  // tags（興趣標籤）：可重生視圖，身分列以純文字顯示；只在非空時輸出
+  if (Array.isArray(f.tags) && f.tags.length) fm.tags = f.tags;
+  if (Array.isArray(f.tagsEn) && f.tagsEn.length) fm.tagsEn = f.tagsEn;
   fm.interactions = (f.interactions ?? []).map(it => ({
     id: it.id, date: it.date, type: it.type ?? "", note: it.note ?? "", lifeUpdate: it.lifeUpdate ?? ""
   }));
   const p = f.profile;
   if (p && p.now) {
+    const en = (obj, key) => obj[`${key}En`] != null && obj[`${key}En`] !== "" ? { [`${key}En`]: obj[`${key}En`] } : {};
     const prof = {
-      now: p.now.map(n => ({ label: n.label, value: n.value, detail: n.detail, sources: n.sources ?? [] })),
+      now: p.now.map(n => ({ label: n.label, ...en(n, "label"), value: n.value, ...en(n, "value"), detail: n.detail, ...en(n, "detail"), sources: n.sources ?? [] })),
       recent: p.recent ?? "",
+      ...en(p, "recent"),
       recentSources: p.recentSources ?? []
     };
     // 我們之間（友誼高光）——只在有內容時輸出
     if (p.relationship && (p.relationship.summary || p.relationship.points?.length)) {
-      prof.relationship = { summary: p.relationship.summary ?? "", points: p.relationship.points ?? [], sources: p.relationship.sources ?? [] };
+      const r = p.relationship;
+      prof.relationship = { summary: r.summary ?? "", ...en(r, "summary"), points: r.points ?? [], ...(Array.isArray(r.pointsEn) ? { pointsEn: r.pointsEn } : {}), sources: r.sources ?? [] };
     }
     // 下次可以聊/一起做（單一清單）——只在非空時輸出
-    if (p.todo?.length) prof.todo = p.todo.map(t => ({ text: t.text, sources: t.sources ?? [] }));
-    prof.topics = (p.topics ?? []).map(t => ({ title: t.title, summary: t.summary, points: t.points ?? [], sources: t.sources ?? [] }));
-    prof.timeline = (p.timeline ?? []).map(e => ({ date: e.date, title: e.title, description: e.description, category: e.category, source: e.source }));
+    if (p.todo?.length) prof.todo = p.todo.map(item => ({ text: item.text, ...en(item, "text"), sources: item.sources ?? [] }));
+    prof.topics = (p.topics ?? []).map(topic => ({
+      title: topic.title, ...en(topic, "title"), summary: topic.summary, ...en(topic, "summary"),
+      points: topic.points ?? [], ...(Array.isArray(topic.pointsEn) ? { pointsEn: topic.pointsEn } : {}),
+      sources: topic.sources ?? []
+    }));
+    prof.timeline = (p.timeline ?? []).map(e => ({
+      date: e.date, title: e.title, ...en(e, "title"), description: e.description, ...en(e, "description"),
+      category: e.category, ...en(e, "category"), source: e.source
+    }));
     fm.profile = prof;
   }
   return fm;
@@ -67,8 +83,12 @@ function toBody(f) {
   const sources = f.profile?.sources ?? [];
   const blocks = sources.map(s => {
     const meta = [`date: ${s.date}`, `label: ${s.label}`];
+    if (s.labelEn) meta.push(`labelEn: ${s.labelEn}`);
     if (s.archive) meta.push("archive: true");
-    return `### ${s.id}\n${meta.join(" · ")}\n\n${(s.text ?? "").trim()}`;
+    const zh = (s.text ?? "").trim();
+    const enText = (s.textEn ?? "").trim();
+    const body = enText ? `${zh}\n\n===en===\n\n${enText}` : zh;
+    return `### ${s.id}\n${meta.join(" · ")}\n\n${body}`;
   });
   return blocks.length ? `## Sources · 原始記錄\n\n${blocks.join("\n\n")}\n` : `## Sources · 原始記錄\n`;
 }

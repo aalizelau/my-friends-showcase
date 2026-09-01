@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { boardMetrics, constrainPosition, organisedPositions, shuffledPositions, focusGeometry, StampBoard } from "../stamp-board.mjs";
 import { FOCUS_LINES, focusLineFor, hasProfileNotes, selectBoardFriends } from "../focus-lines.mjs";
+import { t } from "../i18n.js";
 import { loadFriends } from "../server/profiles.mjs";
 import { fileURLToPath } from "node:url";
 
@@ -241,7 +242,8 @@ test("speech bubbles use only authored lines with existing source notes", async 
     assert.ok(line.text.length < 100);
     assert.ok(line.inspiration && line.sources.length);
   }
-  assert.equal(focusLineFor(friends.find(friend => friend.id === "9")), null, "Blank Roy must not inherit recorded Roy's line");
+  assert.ok(focusLineFor(friends.find(friend => friend.id === "9")));
+  assert.equal(focusLineFor({ id: "9", profile: { sources: [] } }), null, "A blank profile must not inherit another profile's line");
   assert.ok(focusLineFor(friends.find(friend => friend.id === "22")));
   assert.equal(focusLineFor({ id: "1", profile: { sources: [] } }), null);
   assert.equal(focusLineFor({ id: "1", profile: { sources: [{ id: "2026-08-26", text: " " }] } }), null);
@@ -256,7 +258,9 @@ test("recorded profiles stay in the initial selection without changing the input
     const selected = selectBoardFriends(friends, 18, seededRandom(seed));
     assert.equal(selected.length, 18);
     assert.equal(new Set(selected.map(friend => friend.id)).size, 18);
-    for (const friend of friends.filter(hasProfileNotes)) assert.ok(selected.includes(friend));
+    // Recorded profiles are prioritised, filling the board up to its capacity.
+    const recorded = friends.filter(hasProfileNotes);
+    assert.equal(selected.filter(hasProfileNotes).length, Math.min(recorded.length, 18));
   }
   assert.deepEqual(friends.map(friend => friend.id), originalIds);
 });
@@ -268,7 +272,7 @@ test("bubble appears on focus, survives resize, and clears before a blank profil
   assert.equal(bubble.hidden, false);
   assert.equal(bubble.controls[".focus-bubble-text"].textContent, line.text);
   assert.equal(controller.entries.get("1").element.attributes.get("aria-describedby"), "stampFocusBubble");
-  assert.ok(status.textContent.includes("非本人原話"));
+  assert.ok(status.textContent.includes(t("focusBubbleAria")));
   board.clientWidth = 343;
   controller.resize();
   assert.ok(parseFloat(bubble.style.top) >= 0);

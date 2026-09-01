@@ -3,7 +3,11 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { runInNewContext } from 'node:vm';
 
-const source = (await readFile(new URL('../carousel.js', import.meta.url), 'utf8')).replace('export class RingCarousel', 'class RingCarousel');
+import { dict } from '../i18n.js';
+
+const source = (await readFile(new URL('../carousel.js', import.meta.url), 'utf8'))
+  .replace(/^import .*\n/, '')
+  .replace('export class RingCarousel', 'class RingCarousel');
 
 class Element {
   constructor() {
@@ -16,9 +20,14 @@ class Element {
   emit(type, event = {}) { for (const fn of this.events.get(type) || []) fn(event); }
   setAttribute(key, value) { this.attributes[key] = value; }
   removeAttribute(key) { delete this.attributes[key]; }
-  set innerHTML(value) { this.markup = value; this.metaName = new Element(); }
+  set innerHTML(value) { this.markup = value; this.metaNum = new Element(); this.metaName = new Element(); this.metaTags = new Element(); }
   get innerHTML() { return this.markup; }
-  querySelector(selector) { return selector === '.carousel-meta__name' ? this.metaName : null; }
+  querySelector(selector) {
+    if (selector === '.carousel-meta__num') return this.metaNum;
+    if (selector === '.carousel-meta__name') return this.metaName;
+    if (selector === '.carousel-meta__tags') return this.metaTags;
+    return null;
+  }
   appendChild(el) { this.children.push(el); el.parentNode = this; }
   removeChild(el) { this.children = this.children.filter(child => child !== el); el.parentNode = null; }
   closest(selector) { return selector === '.carousel-card' && this.className === 'carousel-card' ? this : null; }
@@ -35,6 +44,7 @@ function fixture({ count = 18, reduced = true, width = 1280, height = 680, bubbl
   const motion = new Element(); motion.matches = reduced; window.matchMedia = () => motion;
   const frames = new Map(); let sequence = 0, clock = 0, opened;
   const sandbox = { document, window, performance: { now: () => clock },
+    t: (key, vars) => { let s = dict.zh[key] ?? key; if (vars) for (const k in vars) s = s.split("{" + k + "}").join(vars[k]); return s; },
     requestAnimationFrame: fn => { frames.set(++sequence, fn); return sequence; },
     cancelAnimationFrame: id => frames.delete(id),
     IntersectionObserver: class { constructor(fn) { this.notify = fn; } observe() {} disconnect() { this.disconnected = true; } }

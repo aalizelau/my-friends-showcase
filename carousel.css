@@ -4,7 +4,11 @@
 .carousel-card { position: absolute; left: 0; top: 0; margin: 0; padding: 0; border: 0; background: transparent; transform-origin: center; will-change: transform, opacity; cursor: pointer; user-select: none; }
 .carousel-card img, .carousel-card svg { width: 100%; height: 100%; object-fit: contain; display: block; -webkit-user-drag: none; pointer-events: none; filter: drop-shadow(0 22px 30px rgba(24,34,30,.18)); }
 .carousel-meta { position: absolute; z-index: 1001; transform: translateX(-50%); text-align: center; pointer-events: none; }
-.carousel-meta__name { margin: 0; color: var(--ink); font: 400 clamp(24px, 3vw, 38px)/1.6 var(--font-handwritten); font-synthesis: none; overflow-wrap: anywhere; }
+.carousel-meta__num { display: block; margin: 0 0 10px; color: var(--muted); font: 400 14px/1 var(--font); letter-spacing: .22em; }
+.carousel-meta__num:empty { display: none; }
+.carousel-meta__name { margin: 0; color: var(--ink); font: 400 clamp(24px, 3vw, 38px)/1.1 var(--font-handwritten); font-synthesis: none; overflow-wrap: anywhere; }
+.carousel-meta__tags { margin: 12px 0 0; color: var(--muted); font: 400 clamp(12px, 1.4vw, 15px)/1.3 var(--font); overflow-wrap: anywhere; }
+.carousel-meta__tags:empty { display: none; }
 .carousel-bubble { z-index: 1002; }
 .carousel-bubble .focus-bubble-text { max-height: 160px; overflow-y: auto; overscroll-behavior: contain; }
 .ring-controls { display: flex; justify-content: flex-end; gap: 4px; }

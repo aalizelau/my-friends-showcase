@@ -18,7 +18,7 @@
   <body>
     <div class="app-shell">
       <header class="topbar">
-        <a class="brand" href="#top" aria-label="My Friends 首頁">
+        <a class="brand" href="#top" data-i18n-aria="brandHome" aria-label="我的朋友首頁">
           <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
           <span class="brand-wordmark">
             <span class="brand-title">My Friends</span>
@@ -28,65 +28,62 @@
           </span>
         </a>
         <div class="header-actions">
-          <button class="primary-button" id="openAddFriend" type="button" aria-label="新增朋友">
-            <span>＋</span> 新朋友
-          </button>
+          <button class="lang-toggle" id="langToggle" type="button" data-i18n-aria="langToggleAria" aria-label="切換語言（中／英）">英文</button>
         </div>
       </header>
 
       <main id="top">
         <section class="content-section" id="friends" aria-labelledby="friends-title">
-          <h1 class="sr-only" id="friends-title">朋友</h1>
+          <h1 class="sr-only" id="friends-title" data-i18n="friendsTitle">朋友</h1>
 
           <div class="workspace">
             <div class="friends-area">
               <div class="result-bar">
-                <p>點選朋友，看看近況</p>
+                <p data-i18n="resultHint">點選朋友，看看近況</p>
                 <div class="collection-controls">
-                <div class="tube-controls" id="tubeControls" role="group" aria-label="環繞相簿控制">
-                  <button type="button" id="tubePrevious" aria-label="向左轉動相簿">←</button>
-                  <button type="button" id="tubePause" aria-pressed="false" aria-label="暫停自動旋轉"><span id="tubePauseIcon" aria-hidden="true">Ⅱ</span><span class="sr-only" id="tubePauseLabel">暫停</span></button>
-                  <button type="button" id="tubeNext" aria-label="向右轉動相簿">→</button>
+                <div class="tube-controls" id="tubeControls" role="group" data-i18n-aria="tubeControlsAria" aria-label="環繞相簿控制">
+                  <button type="button" id="tubePrevious" data-i18n-aria="tubePrevAria" aria-label="向左轉動相簿">←</button>
+                  <button type="button" id="tubePause" aria-pressed="false" data-i18n-aria="tubePauseAria" aria-label="暫停自動旋轉"><span id="tubePauseIcon" aria-hidden="true">Ⅱ</span><span class="sr-only" id="tubePauseLabel" data-i18n="tubePauseLabel">暫停</span></button>
+                  <button type="button" id="tubeNext" data-i18n-aria="tubeNextAria" aria-label="向右轉動相簿">→</button>
                 </div>
-                <div class="board-actions" id="stampActions" aria-label="整理朋友郵票" hidden>
-                  <button id="organiseStamps" type="button"><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="3" y="3" width="5" height="5" rx=".5"/><rect x="12" y="3" width="5" height="5" rx=".5"/><rect x="3" y="12" width="5" height="5" rx=".5"/><rect x="12" y="12" width="5" height="5" rx=".5"/></svg>Organise</button>
-                  <button id="shuffleStamps" type="button"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 5h2c4 0 6 10 10 10h2m-3-3 3 3-3 3M3 15h2c1.5 0 2.7-1.4 4-3.2M11 8.2C12.3 6.4 13.5 5 15 5h2m-3-3 3 3-3 3"/></svg>Shuffle</button>
+                <div class="board-actions" id="stampActions" data-i18n-aria="stampActionsAria" aria-label="整理朋友郵票" hidden>
+                  <button id="organiseStamps" type="button"><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="3" y="3" width="5" height="5" rx=".5"/><rect x="12" y="3" width="5" height="5" rx=".5"/><rect x="3" y="12" width="5" height="5" rx=".5"/><rect x="12" y="12" width="5" height="5" rx=".5"/></svg><span data-i18n="organiseStamps">整理</span></button>
+                  <button id="shuffleStamps" type="button"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 5h2c4 0 6 10 10 10h2m-3-3 3 3-3 3M3 15h2c1.5 0 2.7-1.4 4-3.2M11 8.2C12.3 6.4 13.5 5 15 5h2m-3-3 3 3-3 3"/></svg><span data-i18n="shuffleStamps">打亂</span></button>
                 </div>
-                <div class="ring-controls" id="ringControls" role="group" aria-label="橫向轉盤控制" hidden>
-                  <button type="button" id="ringPrevious" aria-label="上一位朋友">←</button>
-                  <button type="button" id="ringNext" aria-label="下一位朋友">→</button>
+                <div class="ring-controls" id="ringControls" role="group" data-i18n-aria="ringControlsAria" aria-label="橫向轉盤控制" hidden>
+                  <button type="button" id="ringPrevious" data-i18n-aria="ringPrevAria" aria-label="上一位朋友">←</button>
+                  <button type="button" id="ringNext" data-i18n-aria="ringNextAria" aria-label="下一位朋友">→</button>
                 </div>
-                <div class="collection-views" role="group" aria-label="檢視方式">
-                  <button type="button" id="tubeView" class="active" aria-pressed="true" aria-controls="tubeGallery">Tube</button>
-                  <button type="button" id="ringView" aria-pressed="false" aria-controls="carouselMode">Ring</button>
-                  <button type="button" id="stampsView" aria-pressed="false" aria-controls="stampBoard">Stamps</button>
+                <div class="collection-views" role="group" data-i18n-aria="viewsAria" aria-label="檢視方式">
+                  <button type="button" id="tubeView" class="active" aria-pressed="true" aria-controls="tubeGallery" data-i18n="viewTube">環繞</button>
+                  <button type="button" id="ringView" aria-pressed="false" aria-controls="carouselMode" data-i18n="viewRing">轉盤</button>
+                  <button type="button" id="stampsView" aria-pressed="false" aria-controls="stampBoard" data-i18n="viewStamps">郵票</button>
                 </div>
                 </div>
               </div>
-              <div id="carouselMode" role="region" aria-label="朋友橫向轉盤" aria-describedby="ringHelp" hidden></div>
-              <p class="sr-only" id="ringHelp">左右拖曳、捲動或使用方向鍵轉動。點選側邊朋友移到中央，再點選中央朋友開啟手帳。</p>
+              <div id="carouselMode" role="region" data-i18n-aria="carouselModeAria" aria-label="朋友橫向轉盤" aria-describedby="ringHelp" hidden></div>
+              <p class="sr-only" id="ringHelp" data-i18n="ringHelp">左右拖曳、捲動或使用方向鍵轉動。點選側邊朋友移到中央，再點選中央朋友開啟手帳。</p>
               <div class="tube-gallery" id="tubeGallery" hidden>
-                <div class="tube-stage" id="tubeStage" role="region" aria-label="朋友環繞相簿" aria-describedby="tubeHelp">
+                <div class="tube-stage" id="tubeStage" role="region" data-i18n-aria="tubeStageAria" aria-label="朋友環繞相簿" aria-describedby="tubeHelp">
                   <div class="tube-orbit tube-orbit-top" aria-hidden="true"></div>
                   <div class="tube-orbit tube-orbit-bottom" aria-hidden="true"></div>
                   <div class="tube-world" id="tubeWorld"></div>
                 </div>
-                <p class="sr-only" id="tubeHelp">左右拖曳或使用方向按鈕轉動。以 Tab 選取朋友，Enter 開啟手帳。可暫停自動旋轉。</p>
+                <p class="sr-only" id="tubeHelp" data-i18n="tubeHelp">左右拖曳或使用方向按鈕轉動。用鍵盤選取朋友後按確認即可開啟手帳。可暫停自動旋轉。</p>
               </div>
-              <div class="stamp-board" id="stampBoard" aria-label="朋友郵票收藏" aria-describedby="boardHelp" hidden>
+              <div class="stamp-board" id="stampBoard" data-i18n-aria="stampBoardAria" aria-label="朋友郵票收藏" aria-describedby="boardHelp" hidden>
                 <div class="friends-grid" id="friendsGrid"></div>
-                <div class="focus-bubble" id="stampFocusBubble" hidden role="note" aria-label="依手帳想像的語氣，非本人原話">
+                <div class="focus-bubble" id="stampFocusBubble" hidden role="note" data-i18n-aria="focusBubbleAria" aria-label="依手帳想像的語氣，非本人原話">
                   <p class="focus-bubble-text"></p>
                 </div>
-                <div class="stamp-focus-controls" id="stampFocusControls" hidden role="group" aria-label="專注模式">
-                  <button class="focus-profile" id="openFocusedFriend" type="button">打開朋友手帳 <span aria-hidden="true">↗</span></button>
+                <div class="stamp-focus-controls" id="stampFocusControls" hidden role="group" data-i18n-aria="focusModeAria" aria-label="專注模式">
+                  <button class="focus-profile" id="openFocusedFriend" type="button"><span data-i18n="openProfile">打開朋友手帳</span> <span aria-hidden="true">↗</span></button>
                 </div>
               </div>
-              <p class="sr-only" id="boardHelp">拖曳可移動郵票，點選可進入專注模式。以 Tab 選取朋友，方向鍵移動，Enter 進入專注模式，Escape 返回。</p>
+              <p class="sr-only" id="boardHelp" data-i18n="boardHelp">拖曳可移動郵票，點選可進入專注模式。用鍵盤選取朋友，方向鍵移動，按確認進入專注模式，按離開返回。</p>
               <p class="sr-only" id="boardStatus" role="status" aria-live="polite"></p>
               <div class="empty-state" id="emptyState" hidden>
-                <h3>還沒有朋友</h3>
-                <button class="secondary-button" id="emptyAddFriend" type="button">新增朋友</button>
+                <h3 data-i18n="emptyTitle">還沒有朋友</h3>
               </div>
             </div>
           </div>
@@ -95,8 +92,8 @@
     </div>
 
     <div class="drawer-backdrop" id="drawerBackdrop" hidden></div>
-    <aside class="friend-drawer" id="friendDrawer" role="dialog" aria-modal="true" aria-hidden="true" aria-label="朋友詳情" inert>
-      <button class="drawer-close icon-button" id="closeDrawer" type="button" aria-label="關閉朋友詳情">×</button>
+    <aside class="friend-drawer" id="friendDrawer" role="dialog" aria-modal="true" aria-hidden="true" data-i18n-aria="drawerAria" aria-label="朋友詳情" inert>
+      <button class="drawer-close icon-button" id="closeDrawer" type="button" data-i18n-aria="drawerCloseAria" aria-label="關閉朋友詳情">×</button>
       <div id="drawerContent"></div>
     </aside>
 
@@ -104,18 +101,18 @@
       <form id="friendForm">
         <div class="dialog-header">
           <div>
-            <h2>新增朋友</h2>
+            <h2 data-i18n="dlgNewFriend">新增朋友</h2>
           </div>
-          <button class="icon-button dialog-close" type="button" data-close-dialog="friendDialog" aria-label="關閉">×</button>
+          <button class="icon-button dialog-close" type="button" data-close-dialog="friendDialog" data-i18n-aria="dlgClose" aria-label="關閉">×</button>
         </div>
         <div class="form-grid">
-          <label><span>名字 *</span><input name="name" required placeholder="例如：林小雨" /></label>
-          <label><span>暱稱</span><input name="nickname" placeholder="你怎麼稱呼他？" /></label>
-          <label><span>生日</span><input name="birthday" type="date" /></label>
+          <label><span data-i18n="fldName">名字 *</span><input name="name" required data-i18n-ph="fldNamePh" placeholder="例如：林小雨" /></label>
+          <label><span data-i18n="fldNickname">暱稱</span><input name="nickname" data-i18n-ph="fldNicknamePh" placeholder="你怎麼稱呼他？" /></label>
+          <label><span data-i18n="fldBirthday">生日</span><input name="birthday" type="date" /></label>
         </div>
         <div class="dialog-actions">
-          <button class="text-button" type="button" data-close-dialog="friendDialog">取消</button>
-          <button class="primary-button" type="submit">新增朋友</button>
+          <button class="text-button" type="button" data-close-dialog="friendDialog" data-i18n="btnCancel">取消</button>
+          <button class="primary-button" type="submit" data-i18n="btnAddFriend">新增朋友</button>
         </div>
       </form>
     </dialog>
@@ -126,20 +123,20 @@
         <input type="hidden" name="sourceId" />
         <div class="dialog-header">
           <div>
-            <p class="eyebrow" id="sourceEyebrow">EDIT SOURCE</p>
+            <p class="eyebrow" id="sourceEyebrow">編輯原文</p>
             <h2 id="sourceTitle">編輯原始記錄</h2>
             <p class="dialog-subtitle" id="sourceDialogSub"></p>
           </div>
-          <button class="icon-button dialog-close" type="button" data-close-dialog="sourceDialog" aria-label="關閉">×</button>
+          <button class="icon-button dialog-close" type="button" data-close-dialog="sourceDialog" data-i18n-aria="dlgClose" aria-label="關閉">×</button>
         </div>
         <div class="form-grid">
-          <label><span>日期</span><input name="date" placeholder="例如：2026.08.25 或 ARCHIVE" /></label>
-          <label><span>標題</span><input name="label" placeholder="這則記錄的標題" /></label>
-          <label class="full"><span>原文 *</span><textarea name="text" rows="14" required placeholder="原始筆記的內容…"></textarea></label>
+          <label><span data-i18n="fldDate">日期</span><input name="date" data-i18n-ph="fldDatePh" placeholder="例如：2026.08.25，或標示為典藏" /></label>
+          <label><span data-i18n="fldLabel">標題</span><input name="label" data-i18n-ph="fldLabelPh" placeholder="這則記錄的標題" /></label>
+          <label class="full"><span data-i18n="fldText">原文 *</span><textarea name="text" rows="14" required data-i18n-ph="fldTextPh" placeholder="原始筆記的內容…"></textarea></label>
         </div>
         <div class="dialog-actions">
-          <button class="text-button" type="button" data-close-dialog="sourceDialog">取消</button>
-          <button class="primary-button" type="submit">儲存原文</button>
+          <button class="text-button" type="button" data-close-dialog="sourceDialog" data-i18n="btnCancel">取消</button>
+          <button class="primary-button" type="submit" data-i18n="btnSaveSource">儲存原文</button>
         </div>
       </form>
     </dialog>

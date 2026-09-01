@@ -4,13 +4,32 @@
 
 ## 開啟方式
 
-需要 Node.js（零第三方依賴）。在專案目錄啟動本地伺服器：
+需要 Node.js（零第三方依賴）。在專案目錄啟動本地伺服器（可讀寫）：
 
 ```bash
 node server.mjs
 ```
 
 然後前往 `http://localhost:4173`。（可用 `PORT=xxxx node server.mjs` 改埠。）
+
+### 唯讀靜態站（GitHub Pages）
+
+把朋友 markdown 烘成 `data/friends.json`，產出可部署的 `dist/`（介面關閉新增／編輯／刪除）：
+
+```bash
+node scripts/build-static.mjs
+```
+
+本機預覽靜態站（在 `dist/` 開一個靜態伺服器即可）：
+
+```bash
+node scripts/build-static.mjs
+npx --yes serve dist
+```
+
+推送到 `main` 後，GitHub Actions（`.github/workflows/pages.yml`）會自動建置並部署。首次請在 repo：**Settings → Pages → Source → GitHub Actions**。
+
+注意：Pages 網站是公開的，朋友資料會一併上線。編輯仍在本機改 `data/friends/*.md` 後再推送。
 
 ## 朋友收藏板
 
@@ -42,12 +61,13 @@ Ring 沿用 `viscose-carousel` 的橫向大圓弧、慣性與吸附。左右拖�
 
 ## 資料
 
-每位朋友一個 Markdown 檔，存在 `data/friends/<id>.md`，只留在本機、不會上傳。
+每位朋友一個 Markdown 檔，存在 `data/friends/<id>.md`。本機伺服器可讀寫；靜態部署會烘成 `dist/data/friends.json`（唯讀）。
 檔案格式（frontmatter + body）見 [docs/profile-schema.md](docs/profile-schema.md)。
 
 - 讀取：伺服器每次請求即時讀取 md，**編輯 md 後免重啟**。
 - 寫入：從介面新增朋友/片段會由伺服器**原子寫回** md（先寫暫存檔再 rename）。
 - 建議把 `data/` 放進（私有的）git 版本控制，就有免費的歷史、diff 與還原。
+- 公開 Pages 展示前，確認筆記內容適合公開。
 
 ## API
 
@@ -69,4 +89,6 @@ node --test scripts/verify-stamp-board.mjs  # 收藏板佈局、互動狀態與�
 node --test scripts/verify-simplified-ui.mjs  # 精簡介面啟動、新增朋友與分類資料保留測試
 node scripts/verify-tube.mjs  # 圓筒動畫、減少動態、拖曳與空結果測試
 node --test scripts/verify-carousel.mjs  # 橫向轉盤幾何、輸入與動畫生命週期測試
+node scripts/build-static.mjs  # 唯讀靜態站 → dist/（供 GitHub Pages）
+node --test scripts/verify-static-build.mjs  # 靜態建置產出與 friends.json 契約
 ```
