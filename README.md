@@ -12,7 +12,7 @@ node server.mjs
 
 然後前往 `http://localhost:4173`。（可用 `PORT=xxxx node server.mjs` 改埠。）
 
-### 唯讀靜態站（GitHub Pages）
+### 唯讀靜態站（Vercel）
 
 把朋友 markdown 烘成 `data/friends.json`，產出可部署的 `dist/`（介面關閉新增／編輯／刪除）：
 
@@ -20,16 +20,20 @@ node server.mjs
 node scripts/build-static.mjs
 ```
 
-本機預覽靜態站（在 `dist/` 開一個靜態伺服器即可）：
+本機預覽靜態站：
 
 ```bash
 node scripts/build-static.mjs
 npx --yes serve dist
 ```
 
-推送到 `main` 後，GitHub Actions（`.github/workflows/pages.yml`）會自動建置並部署。首次請在 repo：**Settings → Pages → Source → GitHub Actions**。
+部署：連上 Vercel 後，推送到 `main` 會自動建置（`vercel.json`：`node scripts/build-static.mjs` → `dist/`）。也可本機：
 
-注意：Pages 網站是公開的，朋友資料會一併上線。編輯仍在本機改 `data/friends/*.md` 後再推送。
+```bash
+npx vercel --prod
+```
+
+注意：公開部署後朋友資料會一併上線。編輯仍在本機改 `data/friends/*.md` 後再推送。
 
 ## 朋友收藏板
 
@@ -89,6 +93,6 @@ node --test scripts/verify-stamp-board.mjs  # 收藏板佈局、互動狀態與�
 node --test scripts/verify-simplified-ui.mjs  # 精簡介面啟動、新增朋友與分類資料保留測試
 node scripts/verify-tube.mjs  # 圓筒動畫、減少動態、拖曳與空結果測試
 node --test scripts/verify-carousel.mjs  # 橫向轉盤幾何、輸入與動畫生命週期測試
-node scripts/build-static.mjs  # 唯讀靜態站 → dist/（供 GitHub Pages）
+node scripts/build-static.mjs  # 唯讀靜態站 → dist/（供 Vercel）
 node --test scripts/verify-static-build.mjs  # 靜態建置產出與 friends.json 契約
 ```
