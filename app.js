@@ -5,6 +5,7 @@ import { RingCarousel } from "./carousel.js";
 import { focusLineFor, selectBoardFriends } from "./focus-lines.mjs";
 import { t, getLang, setLang, applyStaticI18n } from "./i18n.js";
 import { localizeFriend, localizeFocusLine } from "./locale-content.mjs";
+import { track, registerLanguage } from "./analytics.js";
 
 // GitHub Pages / static builds set data-readonly on <html>; local server.mjs stays writable.
 const isReadOnly = document.documentElement?.dataset?.readonly === "true";
@@ -55,6 +56,7 @@ function avatarMarkup(friend) {
   return avatarSvg(friend.avatar, friend.name);
 }
 let activeFriendId = null;
+let trackedOpenFriendId = null; // which friend the last friend_viewed event was sent for (dedupe)
 let activeDetailTab = "now";
 let toastTimer;
 let drawerCloseTimer;
@@ -250,6 +252,11 @@ function formatDate(value, short = false) {
 function openDrawer(id) {
   const friend = state.friends.find(f => f.id === id);
   if (!friend) return;
+  // Deep-linking re-enters openDrawer for the friend already shown; only count a genuine open.
+  if (trackedOpenFriendId !== id) {
+    track("friend_viewed", { friend_id: id, friend_name: friend.name, view: activeView });
+    trackedOpenFriendId = id;
+  }
   rememberTopicExpansion();
   stampBoard.closeFocus(false);
   tube.setSuspended(true);
@@ -422,6 +429,7 @@ function closeDrawer() {
   clearTimeout(drawerCloseTimer);
   drawerCloseTimer = setTimeout(() => { els.drawerBackdrop.hidden = true; }, 340);
   activeFriendId = null;
+  trackedOpenFriendId = null;
   const returnCard = activeView === "tube"
     ? [...document.querySelector("#tubeWorld").children].find(card => card.dataset.friendId === returnId)
     : activeView === "ring" ? carousel?.cards.find(card => card.item.id === returnId)?.el
@@ -496,6 +504,15 @@ els.drawer.addEventListener("toggle", event => {
 // Flush changes before navigation, even if the native toggle event is still queued.
 window.addEventListener("pagehide", rememberTopicExpansion);
 els.drawer.addEventListener("click", event => {
+  // A summary click (mouse or keyboard) toggles its topic; open still holds the pre-toggle
+  // state here, so a closed topic means the user is expanding it. Re-renders never click,
+  // so this avoids the phantom toggle events fired when a default-open <details> is re-inserted.
+  const topicSummary = event.target.closest(".topic-item > summary");
+  if (topicSummary && !topicSummary.parentElement.open) track("topic_expanded", {
+    friend_id: activeFriendId,
+    topic_title: topicSummary.querySelector("strong")?.textContent || "",
+    topic_index: Number(topicSummary.querySelector("span")?.textContent) || null
+  });
   const trigger = event.target.closest("[data-add-source]");
   if (trigger) openAddSource(trigger.dataset.addSource);
   const tab = event.target.closest("[data-detail-tab]");
@@ -657,8 +674,12 @@ function applyLanguage() {
   }
 }
 document.querySelector("#langToggle").addEventListener("click", () => {
-  setLang(getLang() === "en" ? "zh" : "en");
+  const from = getLang();
+  const to = from === "en" ? "zh" : "en";
+  setLang(to);
   applyLanguage();
+  registerLanguage(to); // keep the app_language super property current for all later events
+  track("language_switched", { from, to });
 });
 
 async function init() {

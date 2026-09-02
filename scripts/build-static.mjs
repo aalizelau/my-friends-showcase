@@ -12,6 +12,7 @@ const FRIENDS_DIR = join(ROOT, "data", "friends");
 
 const STATIC_FILES = [
   "app.js",
+  "analytics.js",
   "i18n.js",
   "locale-content.mjs",
   "focus-lines.mjs",
